@@ -16,6 +16,8 @@ npm install @nightmaregaurav/rtsc
 ### Defining Entity Classes
 ```typescript
 // Person.ts
+import {Address} from "./Address";
+
 export class Person {
     id: string;
     name: string;
@@ -25,6 +27,8 @@ export class Person {
 ```
 ```typescript
 // Address.ts
+import {Person} from "./Person";
+
 export class Address {
     id: string;
     street: string;
@@ -36,7 +40,7 @@ export class Address {
 ### Defining Entity Class Specifications
 ```typescript
 // PersonSpecification.ts
-import {RelationalClassSpecificationBuilder} from "@nightmaregaurav/rtsc/RelationalClassSpecificationBuilder";
+import {RelationalClassSpecificationBuilder} from "@nightmaregaurav/rtsc";
 import {Person} from "./Person";
 import {Address} from "./Address";
 
@@ -47,7 +51,7 @@ export const PersonSpecification = new RelationalClassSpecificationBuilder<Perso
 ```
 ```typescript
 // AddressSpecification.ts
-import {RelationalClassSpecificationBuilder} from "@nightmaregaurav/rtsc/RelationalClassSpecificationBuilder";
+import {RelationalClassSpecificationBuilder} from "@nightmaregaurav/rtsc";
 import {Person} from "./Person";
 import {Address} from "./Address";
 
@@ -60,7 +64,7 @@ export const AddressSpecification = new RelationalClassSpecificationBuilder<Addr
 
 ```typescript
 // DataRegistry.ts
-import {RelationalClassSpecificationRegistry} from "@nightmaregaurav/rtsc/RelationalClassSpecificationRegistry";
+import {RelationalClassSpecificationRegistry} from "@nightmaregaurav/rtsc";
 import {Person} from "./Person";
 import {Address} from "./Address";
 import {PersonSpecification} from "./PersonSpecification";
@@ -73,7 +77,7 @@ RelationalClassSpecificationRegistry.register(Person, PersonSpecification);
 
 ```typescript
 // DataHandlers.ts
-import {RelationalClassDataHandler} from "@nightmaregaurav/rtsc/RelationalClassDataHandler";
+import {RelationalClassDataHandler} from "@nightmaregaurav/rtsc";
 import {Person} from "./Person";
 import {Address} from "./Address";
 
@@ -87,7 +91,7 @@ const person = new Person();
 person.id = "1";
 person.name = "John";
 person.age = 30;
-await personDataHandler.createIfNotExists(person);
+await PersonDataHandler.createIfNotExists(person);
 
 const address1 = new Address();
 address1.id = "1";
@@ -101,10 +105,10 @@ address2.street = "456 Elm St";
 address2.city = "Springfield";
 address2.personId = "1";
 
-await addressDataHandler.createIfNotExists(address1);
-await addressDataHandler.createIfNotExists(address2);
+await AddressDataHandler.createIfNotExists(address1);
+await AddressDataHandler.createIfNotExists(address2);
 
-console.log(personDataHandler.retrieve("1"));
+console.log(PersonDataHandler.retrieve("1"));
 ```
 
 ## How to Contribute
