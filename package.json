@@ -1,6 +1,6 @@
 {
   "name": "@nightmaregaurav/rtsc",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "RTSC is a library that allows you to define classes that can be stored and retrieved from a data storage in a relational way. It is designed to mimic the behavior of a relational database ORM, but it is not an ORM.",
   "main": "Index.ts",
   "repository": {

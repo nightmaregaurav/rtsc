@@ -73,6 +73,21 @@ import {AddressSpecification} from "./AddressSpecification";
 RelationalClassSpecificationRegistry.register(Address, AddressSpecification);
 RelationalClassSpecificationRegistry.register(Person, PersonSpecification);
 ```
+
+### Setup DataStore (By default it uses LocalStorage)
+
+```typescript
+// index.ts
+import {RelationalClassStorageDriver} from "@nightmaregaurav/rtsc";
+
+if(!RelationalClassStorageDriver.isConfigured()){
+    RelationalClassStorageDriver.configure(
+        (table) => await storage.Read(table),
+        (table, data) => await storage.Write(table, data),
+    );
+}
+```
+
 ### Creating Data Handlers
 
 ```typescript
