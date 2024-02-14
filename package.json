@@ -1,0 +1,25 @@
+{
+  "name": "@nightmaregaurav/rtsc",
+  "version": "1.0.0",
+  "description": "RTSC is a library that allows you to define classes that can be stored and retrieved from a data storage in a relational way. It is designed to mimic the behavior of a relational database ORM, but it is not an ORM.",
+  "main": "Index.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nightmaregaurav/rtsc.git"
+  },
+  "keywords": [
+    "rtsc",
+    "relational-typescript-classes",
+    "ORM-alternative"
+  ],
+  "author": "nightmaregaurav",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/nightmaregaurav/rtsc/issues"
+  },
+  "homepage": "https://github.com/nightmaregaurav/rtsc#readme",
+  "devDependencies": {
+    "@types/node": "^20.11.17",
+    "typescript": "^5.3.3"
+  }
+}
