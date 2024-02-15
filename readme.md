@@ -37,10 +37,12 @@ export class Address {
     person: Person;
 }
 ```
+
 ### Defining Entity Class Specifications
 ```typescript
 // PersonSpecification.ts
 import {RelationalClassSpecificationBuilder} from "@nightmaregaurav/rtsc";
+// or import {RelationalClassSpecificationBuilder} from "@nightmaregaurav/rtsc/RelationalClassSpecificationBuilder";
 import {Person} from "./Person";
 import {Address} from "./Address";
 
@@ -52,6 +54,7 @@ export const PersonSpecification = new RelationalClassSpecificationBuilder<Perso
 ```typescript
 // AddressSpecification.ts
 import {RelationalClassSpecificationBuilder} from "@nightmaregaurav/rtsc";
+// or import {RelationalClassSpecificationBuilder} from "@nightmaregaurav/rtsc/RelationalClassSpecificationBuilder";
 import {Person} from "./Person";
 import {Address} from "./Address";
 
@@ -60,11 +63,12 @@ export const AddressSpecification = new RelationalClassSpecificationBuilder<Addr
     .hasOne("person", Person, "personId")
     .build();
 ```
-### Registering Entity Class Specifications
 
+### Registering Entity Class Specifications
 ```typescript
 // DataRegistry.ts
 import {RelationalClassSpecificationRegistry} from "@nightmaregaurav/rtsc";
+// or import {RelationalClassSpecificationRegistry} from "@nightmaregaurav/rtsc/RelationalClassSpecificationRegistry";
 import {Person} from "./Person";
 import {Address} from "./Address";
 import {PersonSpecification} from "./PersonSpecification";
@@ -75,24 +79,24 @@ RelationalClassSpecificationRegistry.register(Person, PersonSpecification);
 ```
 
 ### Setup DataStore (By default it uses LocalStorage)
-
 ```typescript
 // index.ts
 import {RelationalClassStorageDriver} from "@nightmaregaurav/rtsc";
+// or import {RelationalClassStorageDriver} from "@nightmaregaurav/rtsc/RelationalClassStorageDriver";
 
 if(!RelationalClassStorageDriver.isConfigured()){
     RelationalClassStorageDriver.configure(
-        (table) => await storage.Read(table),
-        (table, data) => await storage.Write(table, data),
+        async (table) => await storage.Read(table),
+        async (table, data) => await storage.Write(table, data),
     );
 }
 ```
 
 ### Creating Data Handlers
-
 ```typescript
 // DataHandlers.ts
 import {RelationalClassDataHandler} from "@nightmaregaurav/rtsc";
+// or import {RelationalClassDataHandler} from "@nightmaregaurav/rtsc/RelationalClassDataHandler";
 import {Person} from "./Person";
 import {Address} from "./Address";
 
@@ -123,7 +127,7 @@ address2.personId = "1";
 await AddressDataHandler.createIfNotExists(address1);
 await AddressDataHandler.createIfNotExists(address2);
 
-console.log(PersonDataHandler.retrieve("1"));
+console.log(await PersonDataHandler.retrieve("1"));
 ```
 
 ## How to Contribute

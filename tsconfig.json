@@ -11,7 +11,6 @@
     "declaration": true,
     "sourceMap": true,
     "noEmit": false,
-    "listFiles": true,
     "listEmittedFiles": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
