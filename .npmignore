@@ -2,3 +2,5 @@
 /.idea/
 /.vs/
 /.vscode/
+*.ts
+!*.d.ts

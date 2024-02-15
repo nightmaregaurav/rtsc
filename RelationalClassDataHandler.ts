@@ -23,7 +23,7 @@ export class RelationalClassDataHandler<T extends PlainObject> {
     private async getAllData(_class: Class<T>, depth: number): Promise<T[]> {
         const data = await this.tableReader(_class.name);
 
-        const specification = RelationalClassSpecificationRegistry.getSpecification(this._class);
+        const specification = RelationalClassSpecificationRegistry.getSpecification(_class);
         const relationalTableData: PlainObject = new PlainObject();
         for (const relProperty of specification.relationalProperties) {
             if (depth <= 0) {

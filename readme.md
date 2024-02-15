@@ -41,8 +41,7 @@ export class Address {
 ### Defining Entity Class Specifications
 ```typescript
 // PersonSpecification.ts
-import {RelationalClassSpecificationBuilder} from "@nightmaregaurav/rtsc";
-// or import {RelationalClassSpecificationBuilder} from "@nightmaregaurav/rtsc/RelationalClassSpecificationBuilder";
+import {RelationalClassSpecificationBuilder} from "@nightmaregaurav/rtsc/RelationalClassSpecificationBuilder";
 import {Person} from "./Person";
 import {Address} from "./Address";
 
@@ -53,8 +52,7 @@ export const PersonSpecification = new RelationalClassSpecificationBuilder<Perso
 ```
 ```typescript
 // AddressSpecification.ts
-import {RelationalClassSpecificationBuilder} from "@nightmaregaurav/rtsc";
-// or import {RelationalClassSpecificationBuilder} from "@nightmaregaurav/rtsc/RelationalClassSpecificationBuilder";
+import {RelationalClassSpecificationBuilder} from "@nightmaregaurav/rtsc/RelationalClassSpecificationBuilder";
 import {Person} from "./Person";
 import {Address} from "./Address";
 
@@ -67,8 +65,7 @@ export const AddressSpecification = new RelationalClassSpecificationBuilder<Addr
 ### Registering Entity Class Specifications
 ```typescript
 // DataRegistry.ts
-import {RelationalClassSpecificationRegistry} from "@nightmaregaurav/rtsc";
-// or import {RelationalClassSpecificationRegistry} from "@nightmaregaurav/rtsc/RelationalClassSpecificationRegistry";
+import {RelationalClassSpecificationRegistry} from "@nightmaregaurav/rtsc/RelationalClassSpecificationRegistry";
 import {Person} from "./Person";
 import {Address} from "./Address";
 import {PersonSpecification} from "./PersonSpecification";
@@ -78,16 +75,18 @@ RelationalClassSpecificationRegistry.register(Address, AddressSpecification);
 RelationalClassSpecificationRegistry.register(Person, PersonSpecification);
 ```
 
-### Setup DataStore (By default it uses LocalStorage)
+### Setup DataStore (Optional: By default it uses LocalStorage)
 ```typescript
 // index.ts
-import {RelationalClassStorageDriver} from "@nightmaregaurav/rtsc";
-// or import {RelationalClassStorageDriver} from "@nightmaregaurav/rtsc/RelationalClassStorageDriver";
+import {RelationalClassStorageDriver} from "@nightmaregaurav/rtsc/RelationalClassStorageDriver";
 
-if(!RelationalClassStorageDriver.isConfigured()){
+// You can use any storage here, like LocalStorage, IndexedDB, sql.js, SessionStorage, etc.
+// skipping this step will use LocalStorage
+const DataStorage = new Map<string, any[]>();
+if (!RelationalClassStorageDriver.isConfigured()) {
     RelationalClassStorageDriver.configure(
-        async (table) => await storage.Read(table),
-        async (table, data) => await storage.Write(table, data),
+        async table => await (async () => DataStorage.get(table) || [])(),
+        async (table, data) => await (async () => { DataStorage.set(table, data); })()
     );
 }
 ```
@@ -95,12 +94,11 @@ if(!RelationalClassStorageDriver.isConfigured()){
 ### Creating Data Handlers
 ```typescript
 // DataHandlers.ts
-import {RelationalClassDataHandler} from "@nightmaregaurav/rtsc";
-// or import {RelationalClassDataHandler} from "@nightmaregaurav/rtsc/RelationalClassDataHandler";
+import {RelationalClassDataHandler} from "@nightmaregaurav/rtsc/RelationalClassDataHandler";
 import {Person} from "./Person";
 import {Address} from "./Address";
 
-export const PersonDataHandler = new RelationalClassDataHandler(Person);
+export const PersonDataHandler = new RelationalClassDataHandler(Person, 2);
 export const AddressDataHandler = new RelationalClassDataHandler(Address);
 ```
 
@@ -110,7 +108,6 @@ const person = new Person();
 person.id = "1";
 person.name = "John";
 person.age = 30;
-await PersonDataHandler.createIfNotExists(person);
 
 const address1 = new Address();
 address1.id = "1";
@@ -124,10 +121,36 @@ address2.street = "456 Elm St";
 address2.city = "Springfield";
 address2.personId = "1";
 
-await AddressDataHandler.createIfNotExists(address1);
-await AddressDataHandler.createIfNotExists(address2);
+(async () => {
+    await PersonDataHandler.createIfNotExists(person);
+    await AddressDataHandler.createIfNotExists(address1);
+    await AddressDataHandler.createIfNotExists(address2);
+    console.log(await PersonDataHandler.retrieve("1"));
+})();
 
-console.log(await PersonDataHandler.retrieve("1"));
+// Output:
+
+// Person {
+//     id: '1',
+//     name: 'John',
+//     age: 30,
+//     address: [
+//         Address {
+//             id: '1',
+//             street: '123 Main St',
+//             city: 'Springfield',
+//             personId: '1',
+//             person: [Circular *1]
+//         },
+//         Address {
+//             id: '2',
+//             street: '456 Elm St',
+//             city: 'Springfield',
+//             personId: '1',
+//             person: [Circular *1]
+//         }
+//     ]
+// }
 ```
 
 ## How to Contribute
