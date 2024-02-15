@@ -8,6 +8,10 @@
     "strict": true,
     "skipLibCheck": true,
     "strictPropertyInitialization": false,
-    "noEmit": true,
+    "declaration": true,
+    "sourceMap": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "emitDeclarationOnly": true
   }
 }
