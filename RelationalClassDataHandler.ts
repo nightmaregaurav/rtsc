@@ -1,45 +1,62 @@
 import {RelationalClassStorageDriver, TableReader, TableWriter} from "./RelationalClassStorageDriver";
 import {Class, PlainObject} from "./BaseTypes";
 import {RelationalClassSpecificationRegistry} from "./RelationalClassSpecificationRegistry";
+import {RelationalClassSpecification} from "./RelationalClassSpecification";
 
 export class RelationalClassDataHandler<T extends PlainObject> {
     private readonly tableReader: TableReader;
-    private readonly tableWriter: TableWriter;
+    private readonly Read: () => Promise<PlainObject[]>;
+    private readonly Write: (data: PlainObject[]) => Promise<void>;
+    private readonly getClassSpecification: () => RelationalClassSpecification;
 
     constructor(private _class: Class<T>, private depth: number = 1) {
-        if(RelationalClassStorageDriver.isConfigured()) {
-            this.tableReader = RelationalClassStorageDriver.getTableReader();
-            this.tableWriter = RelationalClassStorageDriver.getTableWriter();
-        } else {
-            this.tableReader = (table: string) => (async () => {
-                return JSON.parse(localStorage.getItem(table) || "[]");
-            })();
-            this.tableWriter = (table: string, data: PlainObject[]) => (async () => {
-                localStorage.setItem(table, JSON.stringify(data));
-            })();
+        let tableReader: TableReader;
+        let tableWriter: TableWriter;
+
+        tableReader = RelationalClassStorageDriver.getTableReader();
+        tableWriter = RelationalClassStorageDriver.getTableWriter();
+
+        this.getClassSpecification = () => RelationalClassSpecificationRegistry.getSpecificationFor(_class);
+        this.tableReader = tableReader;
+        this.Read = () => tableReader(this.getClassSpecification().tableName);
+        this.Write = (data: PlainObject[]) => tableWriter(this.getClassSpecification().tableName, data);
+    }
+
+    private async sanitize(data: T[]){
+        const sanitizedData: T[] = [];
+        for(const obj of data){
+            const sanitizedObj = {...obj};
+            const specification = this.getClassSpecification();
+            for (const relProperty of specification.relationalProperties) {
+                delete sanitizedObj[relProperty.name];
+            }
+            sanitizedData.push(sanitizedObj);
         }
+        return sanitizedData;
     }
 
     private async getAllData(_class: Class<T>, depth: number): Promise<T[]> {
-        const data = await this.tableReader(_class.name);
+        const specification = RelationalClassSpecificationRegistry.getSpecificationFor(_class);
+        const data = await this.tableReader(specification.tableName);
 
-        const specification = RelationalClassSpecificationRegistry.getSpecification(_class);
         const relationalTableData: PlainObject = new PlainObject();
         for (const relProperty of specification.relationalProperties) {
+            const relatedClassName = relProperty.relatedClass.name;
             if (depth <= 0) {
-                relationalTableData[relProperty.relatedClass.name] = [];
+                relationalTableData[relatedClassName] = [];
                 continue;
             }
-            relationalTableData[relProperty.relatedClass.name] = await this.getAllData(relProperty.relatedClass, depth - 1);
+            relationalTableData[relatedClassName] = await this.getAllData(relProperty.relatedClass, depth - 1);
         }
 
         data.forEach((obj: any) => {
             for (const relProperty of specification.relationalProperties) {
+                const relatedClassName = relProperty.relatedClass.name;
                 if (relProperty.isList) {
-                    obj[relProperty.name] = relationalTableData[relProperty.relatedClass.name].filter((x: PlainObject) => x[relProperty.idPropName] === obj[specification.identifier]);
+                    obj[relProperty.name] = relationalTableData[relatedClassName].filter((x: PlainObject) => x[relProperty.idPropName] === obj[specification.identifier]);
                 } else {
-                    const relatedPropSpec = RelationalClassSpecificationRegistry.getSpecification(relProperty.relatedClass);
-                    obj[relProperty.name] = relationalTableData[relProperty.relatedClass.name].find((x: PlainObject) => x[relatedPropSpec.identifier] === obj[relProperty.idPropName]);
+                    const relatedPropSpec = RelationalClassSpecificationRegistry.getSpecificationFor(relProperty.relatedClass);
+                    obj[relProperty.name] = relationalTableData[relatedClassName].find((x: PlainObject) => x[relatedPropSpec.identifier] === obj[relProperty.idPropName]);
                 }
             }
         });
@@ -48,18 +65,16 @@ export class RelationalClassDataHandler<T extends PlainObject> {
 
     async create(obj: T): Promise<void> {
         let data = await this.getAllData(this._class, this.depth);
-        const specification = RelationalClassSpecificationRegistry.getSpecification(this._class);
-        if (data.find(x => x[specification.identifier] === obj[specification.identifier])) {
-            throw new Error(`Object with id ${obj[specification.identifier]} already exists.`);
+        if (data.find(x => x[this.getClassSpecification().identifier] === obj[this.getClassSpecification().identifier])) {
+            throw new Error(`Object with id ${obj[this.getClassSpecification().identifier]} already exists.`);
         }
         data.push(obj);
-        await this.tableWriter(this._class.name, data);
+        await this.Write(await this.sanitize(data));
     }
 
     async retrieve(id: string): Promise<T> {
         let data = await this.getAllData(this._class, this.depth);
-        const specification = RelationalClassSpecificationRegistry.getSpecification(this._class);
-        const obj = data.find(x => x[specification.identifier] === id);
+        const obj = data.find(x => x[this.getClassSpecification().identifier] === id);
         if (!obj) {
             throw new Error(`Object with id ${id} does not exist`);
         }
@@ -76,62 +91,82 @@ export class RelationalClassDataHandler<T extends PlainObject> {
 
     async update(obj: T): Promise<void> {
         let data = await this.getAllData(this._class, this.depth);
-        const specification = RelationalClassSpecificationRegistry.getSpecification(this._class);
-        const index = data.findIndex(x => x[specification.identifier] === obj[specification.identifier]);
+        const index = data.findIndex(x => x[this.getClassSpecification().identifier] === obj[this.getClassSpecification().identifier]);
         if (index === -1) {
-            throw new Error(`Object with id ${obj[specification.identifier]} does not exist`);
+            throw new Error(`Object with id ${obj[this.getClassSpecification().identifier]} does not exist`);
         }
         data[index] = obj;
-        await this.tableWriter(this._class.name, data);
+        await this.Write(await this.sanitize(data));
     }
 
     async createOrUpdate(obj: T): Promise<void> {
         let data = await this.getAllData(this._class, this.depth);
-        const specification = RelationalClassSpecificationRegistry.getSpecification(this._class);
-        const index = data.findIndex(x => x[specification.identifier] === obj[specification.identifier]);
+        const index = data.findIndex(x => x[this.getClassSpecification().identifier] === obj[this.getClassSpecification().identifier]);
         if (index === -1) {
             data.push(obj);
         } else {
             data[index] = obj;
         }
-        await this.tableWriter(this._class.name, data);
+        await this.Write(await this.sanitize(data));
     }
 
     async createIfNotExists(obj: T): Promise<void> {
         let data = await this.getAllData(this._class, this.depth);
-        const specification = RelationalClassSpecificationRegistry.getSpecification(this._class);
-        if (data.find(x => x[specification.identifier] === obj[specification.identifier])) {
+        if (data.find(x => x[this.getClassSpecification().identifier] === obj[this.getClassSpecification().identifier])) {
             return;
         }
         data.push(obj);
-        await this.tableWriter(this._class.name, data);
+        await this.Write(await this.sanitize(data));
     }
 
     async exists(id: string): Promise<boolean> {
         let data = await this.getAllData(this._class, this.depth);
-        const specification = RelationalClassSpecificationRegistry.getSpecification(this._class);
-        return !!data.find(x => x[specification.identifier] === id);
+        return !!data.find(x => x[this.getClassSpecification().identifier] === id);
     }
 
     async delete(obj: T): Promise<void> {
         let data = await this.getAllData(this._class, this.depth);
-        const specification = RelationalClassSpecificationRegistry.getSpecification(this._class);
-        const index = data.findIndex(x => x[specification.identifier] === obj[specification.identifier]);
+        const index = data.findIndex(x => x[this.getClassSpecification().identifier] === obj[this.getClassSpecification().identifier]);
         if (index === -1) {
-            throw new Error(`Object with id ${obj[specification.identifier]} does not exist`);
+            throw new Error(`Object with id ${obj[this.getClassSpecification().identifier]} does not exist`);
         }
         data.splice(index, 1);
-        await this.tableWriter(this._class.name, data);
+        await this.Write(await this.sanitize(data));
     }
 
     async deleteIfExists(id: string): Promise<void> {
         let data = await this.getAllData(this._class, this.depth);
-        const specification = RelationalClassSpecificationRegistry.getSpecification(this._class);
-        const index = data.findIndex(x => x[specification.identifier] === id);
+        const index = data.findIndex(x => x[this.getClassSpecification().identifier] === id);
         if (index === -1) {
             return;
         }
         data.splice(index, 1);
-        await this.tableWriter(this._class.name, data);
+        await this.Write(await this.sanitize(data));
+    }
+
+    async withDepth(depth: number): Promise<RelationalClassDataHandler<T>> {
+        return new RelationalClassDataHandler(this._class, depth);
+    }
+
+    static async dumpAllData(): Promise<Map<string, PlainObject[]>> {
+        const data: Map<string, PlainObject[]> = new Map<string, PlainObject[]>();
+        const specifications = RelationalClassSpecificationRegistry.getAllSpecifications();
+        for(const spec of specifications){
+            const tableReader = RelationalClassStorageDriver.getTableReader();
+            data.set(spec.tableName, await tableReader(spec.tableName));
+        }
+        return data;
+    }
+
+    static async loadAllData(data: Map<string, PlainObject[]>): Promise<void> {
+        const specifications = RelationalClassSpecificationRegistry.getAllSpecifications();
+        for(const spec of specifications){
+            const tableWriter = RelationalClassStorageDriver.getTableWriter();
+            let tableData = data.get(spec.tableName);
+            if(!tableData){
+                tableData = [];
+            }
+            await tableWriter(spec.tableName, tableData);
+        }
     }
 }

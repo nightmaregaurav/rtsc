@@ -4,19 +4,26 @@ export type TableReader = (table: string) => Promise<PlainObject[]>;
 export type TableWriter = (table: string, data: PlainObject[]) => Promise<void>;
 
 export class RelationalClassStorageDriver {
-    private static TableReader: TableReader;
-    private static TableWriter: TableWriter;
+    private static TableReader: TableReader = (table: string) => (async () => {
+        return JSON.parse(localStorage.getItem(table) || "[]");
+    })();
 
+    private static TableWriter: TableWriter = (table: string, data: PlainObject[]) => (async () => {
+        localStorage.setItem(table, JSON.stringify(data));
+    })();
+
+    private static _isConfigured: boolean = false;
     public static configure(tableReader: TableReader, tableWriter: TableWriter): void {
-        if (RelationalClassStorageDriver.isConfigured()){
+        if (RelationalClassStorageDriver._isConfigured){
             throw new Error("RelationalClassStorageDriver is already configured.");
         }
+        RelationalClassStorageDriver._isConfigured = true;
         RelationalClassStorageDriver.TableReader = tableReader;
         RelationalClassStorageDriver.TableWriter = tableWriter;
     }
 
     public static isConfigured(): boolean {
-        return !!RelationalClassStorageDriver.TableReader && !!RelationalClassStorageDriver.TableWriter;
+        return RelationalClassStorageDriver._isConfigured;
     }
 
     public static getTableReader() {

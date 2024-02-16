@@ -45,7 +45,8 @@ import {RelationalClassSpecificationBuilder} from "@nightmaregaurav/rtsc/Relatio
 import {Person} from "./Person";
 import {Address} from "./Address";
 
-export const PersonSpecification = new RelationalClassSpecificationBuilder<Person>()
+export const PersonSpecification = new RelationalClassSpecificationBuilder(Person)
+    .withTableName("person") // Optional: By default it uses class name
     .hasIdentifier("id")
     .hasMany("address", Address, "personId")
     .build();
@@ -56,7 +57,8 @@ import {RelationalClassSpecificationBuilder} from "@nightmaregaurav/rtsc/Relatio
 import {Person} from "./Person";
 import {Address} from "./Address";
 
-export const AddressSpecification = new RelationalClassSpecificationBuilder<Address>()
+export const AddressSpecification = new RelationalClassSpecificationBuilder(Address)
+    .withTableName("address") // Optional: By default it uses class name
     .hasIdentifier("id")
     .hasOne("person", Person, "personId")
     .build();
@@ -71,8 +73,8 @@ import {Address} from "./Address";
 import {PersonSpecification} from "./PersonSpecification";
 import {AddressSpecification} from "./AddressSpecification";
 
-RelationalClassSpecificationRegistry.register(Address, AddressSpecification);
-RelationalClassSpecificationRegistry.register(Person, PersonSpecification);
+RelationalClassSpecificationRegistry.register(AddressSpecification);
+RelationalClassSpecificationRegistry.register(PersonSpecification);
 ```
 
 ### Setup DataStore (Optional: By default it uses LocalStorage)
@@ -98,8 +100,8 @@ import {RelationalClassDataHandler} from "@nightmaregaurav/rtsc/RelationalClassD
 import {Person} from "./Person";
 import {Address} from "./Address";
 
-export const PersonDataHandler = new RelationalClassDataHandler(Person, 2);
-export const AddressDataHandler = new RelationalClassDataHandler(Address);
+export const PersonDataHandler = new RelationalClassDataHandler(Person);
+export const AddressDataHandler = new RelationalClassDataHandler(Address, 1); // 1 is the depth of relational data
 ```
 
 ### Using Data Handlers
@@ -125,7 +127,8 @@ address2.personId = "1";
     await PersonDataHandler.createIfNotExists(person);
     await AddressDataHandler.createIfNotExists(address1);
     await AddressDataHandler.createIfNotExists(address2);
-    console.log(await PersonDataHandler.retrieve("1"));
+    console.log(await PersonDataHandler.withDepth(2).retrieve("1"));
+    console.log(await AddressDataHandler.retrieve("1"));
 })();
 
 // Output:
@@ -151,6 +154,21 @@ address2.personId = "1";
 //         }
 //     ]
 // }
+```
+
+### Backup and Restore (Clearing the storage is not handled, so you need to handle it yourself)
+```typescript
+// Backup.ts
+import {RelationalClassDataHandler} from "@nightmaregaurav/rtsc/RelationalClassDataHandler";
+
+const dump = await RelationalClassDataHandler.dumpAllData(); // dump is a Map<string, any[]> where string is the table name and any[] is the data
+... // Save the dump to a file or send it to a server
+```
+```typescript
+// Restore.ts
+import {RelationalClassDataHandler} from "@nightmaregaurav/rtsc/RelationalClassDataHandler";
+
+await RelationalClassDataHandler.loadAllData(dump); // dump is a Map<string, any[]> where string is the table name and any[] is the data
 ```
 
 ## How to Contribute

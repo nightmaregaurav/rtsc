@@ -8,6 +8,8 @@ export class RelationalProperty {
 }
 
 export class RelationalClassSpecification {
+    registeredClass: Class<any>;
+    tableName: string;
     identifier: string;
     relationalProperties: RelationalProperty[];
 }

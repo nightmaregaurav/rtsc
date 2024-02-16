@@ -3,9 +3,21 @@ import {Class, PlainObject} from "./BaseTypes";
 
 export class RelationalClassSpecificationBuilder<T extends PlainObject> {
     private readonly specification: RelationalClassSpecification = new RelationalClassSpecification();
+    private isTableNameManuallySet: boolean = false;
 
-    constructor() {
+    constructor(_class: Class<T>) {
+        this.specification.registeredClass = _class;
+        this.specification.tableName = _class.name;
         this.specification.relationalProperties = [];
+    }
+
+    withTableName(tableName: string): RelationalClassSpecificationBuilder<T> {
+        if (this.isTableNameManuallySet) {
+            throw new Error("Cannot set the table name more than once.");
+        }
+        this.specification.tableName = tableName;
+        this.isTableNameManuallySet = true;
+        return this;
     }
 
     hasIdentifier(identifier: keyof T): RelationalClassSpecificationBuilder<T> {

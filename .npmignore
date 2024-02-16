@@ -4,3 +4,5 @@
 /.vscode/
 *.ts
 !*.d.ts
+/.github
+/.gitignore
