@@ -66,10 +66,8 @@ export const AddressSpecification = new RelationalClassSpecificationBuilder(Addr
 
 ### Registering Entity Class Specifications
 ```typescript
-// DataRegistry.ts
+// DataRegistry.ts (Somewhere in your entry point you must import this file/or place the register calls in a method and call it.)
 import {RelationalClassSpecificationRegistry} from "@nightmaregaurav/rtsc/RelationalClassSpecificationRegistry";
-import {Person} from "./Person";
-import {Address} from "./Address";
 import {PersonSpecification} from "./PersonSpecification";
 import {AddressSpecification} from "./AddressSpecification";
 
@@ -79,7 +77,7 @@ RelationalClassSpecificationRegistry.register(PersonSpecification);
 
 ### Setup DataStore (Optional: By default it uses LocalStorage)
 ```typescript
-// index.ts
+// DataStorage.ts (Somewhere in your entry point you must import this file/or place the register calls in a method and call it.)
 import {RelationalClassStorageDriver} from "@nightmaregaurav/rtsc/RelationalClassStorageDriver";
 
 // You can use any storage here, like LocalStorage, IndexedDB, sql.js, SessionStorage, etc.
