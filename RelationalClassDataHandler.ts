@@ -1,25 +1,17 @@
-import {RelationalClassStorageDriver, TableReader, TableWriter} from "./RelationalClassStorageDriver";
+import {RelationalClassStorageDriver} from "./RelationalClassStorageDriver";
 import {Class, PlainObject} from "./BaseTypes";
 import {RelationalClassSpecificationRegistry} from "./RelationalClassSpecificationRegistry";
 import {RelationalClassSpecification} from "./RelationalClassSpecification";
 
 export class RelationalClassDataHandler<T extends PlainObject> {
-    private readonly tableReader: TableReader;
     private readonly Read: () => Promise<PlainObject[]>;
     private readonly Write: (data: PlainObject[]) => Promise<void>;
     private readonly getClassSpecification: () => RelationalClassSpecification;
 
     constructor(private _class: Class<T>, private depth: number = 1) {
-        let tableReader: TableReader;
-        let tableWriter: TableWriter;
-
-        tableReader = RelationalClassStorageDriver.getTableReader();
-        tableWriter = RelationalClassStorageDriver.getTableWriter();
-
         this.getClassSpecification = () => RelationalClassSpecificationRegistry.getSpecificationFor(_class);
-        this.tableReader = tableReader;
-        this.Read = () => tableReader(this.getClassSpecification().tableName);
-        this.Write = (data: PlainObject[]) => tableWriter(this.getClassSpecification().tableName, data);
+        this.Read = () => RelationalClassStorageDriver.getTableReader()(this.getClassSpecification().tableName);
+        this.Write = (data: PlainObject[]) => RelationalClassStorageDriver.getTableWriter()(this.getClassSpecification().tableName, data);
     }
 
     private async sanitize(data: T[]){
@@ -37,7 +29,7 @@ export class RelationalClassDataHandler<T extends PlainObject> {
 
     private async getAllData(_class: Class<T>, depth: number): Promise<T[]> {
         const specification = RelationalClassSpecificationRegistry.getSpecificationFor(_class);
-        const data = await this.tableReader(specification.tableName);
+        const data = await RelationalClassStorageDriver.getTableReader()(specification.tableName);
 
         const relationalTableData: PlainObject = new PlainObject();
         for (const relProperty of specification.relationalProperties) {
