@@ -4,13 +4,11 @@ import {RelationalClassSpecificationRegistry} from "./RelationalClassSpecificati
 import {RelationalClassSpecification} from "./RelationalClassSpecification";
 
 export class RelationalClassDataHandler<T extends PlainObject> {
-    private readonly Read: () => Promise<PlainObject[]>;
     private readonly Write: (data: PlainObject[]) => Promise<void>;
     private readonly getClassSpecification: () => RelationalClassSpecification;
 
     constructor(private _class: Class<T>, private depth: number = 1) {
         this.getClassSpecification = () => RelationalClassSpecificationRegistry.getSpecificationFor(_class);
-        this.Read = () => RelationalClassStorageDriver.getTableReader()(this.getClassSpecification().tableName);
         this.Write = (data: PlainObject[]) => RelationalClassStorageDriver.getTableWriter()(this.getClassSpecification().tableName, data);
     }
 
@@ -29,7 +27,7 @@ export class RelationalClassDataHandler<T extends PlainObject> {
 
     private async getAllData(_class: Class<T>, depth: number): Promise<T[]> {
         const specification = RelationalClassSpecificationRegistry.getSpecificationFor(_class);
-        const data = await RelationalClassStorageDriver.getTableReader()(specification.tableName);
+        const data = await RelationalClassStorageDriver.getTableReader()(specification.tableName) || []
 
         const relationalTableData: PlainObject = new PlainObject();
         for (const relProperty of specification.relationalProperties) {
@@ -145,7 +143,7 @@ export class RelationalClassDataHandler<T extends PlainObject> {
         const specifications = RelationalClassSpecificationRegistry.getAllSpecifications();
         for(const spec of specifications){
             const tableReader = RelationalClassStorageDriver.getTableReader();
-            data.set(spec.tableName, await tableReader(spec.tableName));
+            data.set(spec.tableName, await tableReader(spec.tableName) || []);
         }
         return data;
     }
