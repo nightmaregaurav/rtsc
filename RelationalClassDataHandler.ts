@@ -134,7 +134,7 @@ export class RelationalClassDataHandler<T extends PlainObject> {
         await this.Write(await this.sanitize(data));
     }
 
-    async withDepth(depth: number): Promise<RelationalClassDataHandler<T>> {
+    withDepth(depth: number): RelationalClassDataHandler<T> {
         return new RelationalClassDataHandler(this._class, depth);
     }
 
