@@ -50,7 +50,7 @@ export class RelationalClassDataHandler<T extends PlainObject> {
                 }
             }
         });
-        return (data || []) as T[];
+        return (data || []) as TT[];
     }
 
     async create(obj: T): Promise<void> {
