@@ -12,7 +12,7 @@ RTSC is a library that allows you to define classes that can be stored and retri
 npm install @nightmaregaurav/rtsc
 ````
 
-## Usage
+## Usage ([Watch video](https://www.youtube.com/watch?v=ZLLvKlQ8t2U))
 ### Defining Entity Classes
 ```typescript
 // Person.ts
