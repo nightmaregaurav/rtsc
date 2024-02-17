@@ -1,5 +1,5 @@
 import {RelationalClassSpecification} from "./RelationalClassSpecification";
-import {Class, PlainObject} from "./BaseTypes";
+import {Class, PlainObject, RelationalClassesOf} from "./BaseTypes";
 
 export class RelationalClassSpecificationBuilder<T extends PlainObject> {
     private readonly specification: RelationalClassSpecification = new RelationalClassSpecification();
@@ -28,7 +28,7 @@ export class RelationalClassSpecificationBuilder<T extends PlainObject> {
         return this;
     }
 
-    hasOne<TT extends PlainObject>(name: keyof T, relatedClass: Class<TT>, idPropName: keyof T): RelationalClassSpecificationBuilder<T> {
+    hasOne<TT extends RelationalClassesOf<T>>(name: keyof T, relatedClass: Class<TT>, idPropName: keyof T): RelationalClassSpecificationBuilder<T> {
         if (this.specification.relationalProperties.find(x => x.name === name)) {
             throw new Error(`Cannot set multiple relational properties with the same name: ${name as string}`);
         }
@@ -41,7 +41,7 @@ export class RelationalClassSpecificationBuilder<T extends PlainObject> {
         return this;
     }
 
-    hasMany<TT extends PlainObject>(name: keyof T, relatedClass: Class<TT>, idPropName: keyof TT): RelationalClassSpecificationBuilder<T> {
+    hasMany<TT extends RelationalClassesOf<T>>(name: keyof T, relatedClass: Class<TT>, idPropName: keyof TT): RelationalClassSpecificationBuilder<T> {
         if (this.specification.relationalProperties.find(x => x.name === name)) {
             throw new Error(`Cannot set multiple relational properties with the same name: ${name as string}`);
         }

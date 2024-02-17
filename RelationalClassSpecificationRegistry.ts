@@ -4,7 +4,7 @@ import {RelationalClassSpecification} from "./RelationalClassSpecification";
 export class RelationalClassSpecificationRegistry {
     private static readonly specifications: PlainObject = {};
 
-    static register<T>(specification: RelationalClassSpecification): void {
+    static register(specification: RelationalClassSpecification): void {
         if (this.specifications[specification.registeredClass.name]) {
             throw new Error(`A Class Specification is already registered for the class ${specification.registeredClass.name} which is mapped to table ${specification.tableName}`);
         }
@@ -15,7 +15,7 @@ export class RelationalClassSpecificationRegistry {
         this.specifications[specification.registeredClass.name] = specification;
     }
 
-    static isRegistered<T>(specification: RelationalClassSpecification): boolean {
+    static isRegistered(specification: RelationalClassSpecification): boolean {
         return !!this.specifications[specification.registeredClass.name];
     }
 

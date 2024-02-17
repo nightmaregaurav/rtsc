@@ -25,7 +25,7 @@ export class RelationalClassDataHandler<T extends PlainObject> {
         return sanitizedData;
     }
 
-    private async getAllData(_class: Class<T>, depth: number): Promise<T[]> {
+    private async getAllData<TT extends PlainObject>(_class: Class<TT>, depth: number): Promise<TT[]> {
         const specification = RelationalClassSpecificationRegistry.getSpecificationFor(_class);
         const data = await RelationalClassStorageDriver.getTableReader()(specification.tableName) || []
 
