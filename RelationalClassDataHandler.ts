@@ -1,13 +1,13 @@
 import {RelationalClassStorageDriver} from "./RelationalClassStorageDriver";
-import {Class, PlainObject} from "./BaseTypes";
 import {RelationalClassSpecificationRegistry} from "./RelationalClassSpecificationRegistry";
 import {RelationalClassSpecification} from "./RelationalClassSpecification";
+import {ClassReference, PlainObject} from "@nightmaregaurav/ts-utility-types";
 
 export class RelationalClassDataHandler<T extends PlainObject> {
     private readonly Write: (data: PlainObject[]) => Promise<void>;
     private readonly getClassSpecification: () => RelationalClassSpecification;
 
-    constructor(private _class: Class<T>, private depth: number = 1) {
+    constructor(private _class: ClassReference<T>, private depth: number = 1) {
         this.getClassSpecification = () => RelationalClassSpecificationRegistry.getSpecificationFor(_class);
         this.Write = (data: PlainObject[]) => RelationalClassStorageDriver.getTableWriter()(this.getClassSpecification().tableName, data);
     }
@@ -25,7 +25,7 @@ export class RelationalClassDataHandler<T extends PlainObject> {
         return sanitizedData;
     }
 
-    private async getAllData<TT extends PlainObject>(_class: Class<TT>, depth: number): Promise<TT[]> {
+    private async getAllData<TT extends PlainObject>(_class: ClassReference<TT>, depth: number): Promise<TT[]> {
         const specification = RelationalClassSpecificationRegistry.getSpecificationFor(_class);
         const data = await RelationalClassStorageDriver.getTableReader()(specification.tableName) || []
 

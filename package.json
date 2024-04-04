@@ -1,6 +1,6 @@
 {
   "name": "@nightmaregaurav/rtsc",
-  "version": "2.0.6",
+  "version": "2.0.7",
   "description": "RTSC is a library that allows you to define classes that can be stored and retrieved from a data storage in a relational way. It is designed to mimic the behavior of a relational database ORM, but it is not an ORM. Neither is it supposed to be used with remote database. It pulls entire table from storage and then performs operations to bind relational data and store it back. So, it is not suitable for remote databases. But it can be helpful for local storages, like LocalStorage, IndexedDB, sql.js, SessionStorage, etc.",
   "scripts": {
     "compile": "tsc",
@@ -24,5 +24,8 @@
   "devDependencies": {
     "@types/node": "^20.11.17",
     "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@nightmaregaurav/ts-utility-types": "0.0.1"
   }
 }

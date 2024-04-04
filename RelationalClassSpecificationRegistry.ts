@@ -1,4 +1,4 @@
-import {Class, PlainObject} from "./BaseTypes";
+import {ClassReference, PlainObject} from "@nightmaregaurav/ts-utility-types";
 import {RelationalClassSpecification} from "./RelationalClassSpecification";
 
 export class RelationalClassSpecificationRegistry {
@@ -19,11 +19,11 @@ export class RelationalClassSpecificationRegistry {
         return !!this.specifications[specification.registeredClass.name];
     }
 
-    static isSpecificationRegisteredFor<T>(_class: Class<T>): boolean {
+    static isSpecificationRegisteredFor<T>(_class: ClassReference<T>): boolean {
         return !!this.specifications[_class.name];
     }
 
-    static getSpecificationFor<T>(_class: Class<T>): RelationalClassSpecification {
+    static getSpecificationFor<T>(_class: ClassReference<T>): RelationalClassSpecification {
         if (!this.specifications[_class.name]) {
             throw new Error("No specification found for class " + _class.name);
         }

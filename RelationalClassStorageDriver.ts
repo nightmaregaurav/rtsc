@@ -1,4 +1,4 @@
-import {PlainObject} from "./BaseTypes";
+import {PlainObject} from "@nightmaregaurav/ts-utility-types";
 
 export type TableReader = (table: string) => Promise<PlainObject[]>;
 export type TableWriter = (table: string, data: PlainObject[]) => Promise<void>;
