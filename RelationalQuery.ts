@@ -150,14 +150,18 @@ export default class RelationalQuery<Root extends PlainObject, Current extends P
                 attachedData[includeKey] = await relationalPropertyRepository
                   .getQueryable()
                   .injectIncludeMap(includeContext[includeKey])
-                  .getByIds(idsToFetch);
+                  .getByIds(idsToFetch || []);
             }
             if(!isRelationalPropertyAList){
                 const fk = data[relationalPropertyDefinition.fkPropName];
-                attachedData[includeKey] = await relationalPropertyRepository
-                  .getQueryable()
-                  .injectIncludeMap(includeContext[includeKey])
-                  .getById(fk);
+                if (!fk){
+                    attachedData[includeKey] = null;
+                } else {
+                    attachedData[includeKey] = await relationalPropertyRepository
+                      .getQueryable()
+                      .injectIncludeMap(includeContext[includeKey])
+                      .getById(fk);
+                }
             }
         }
         return attachedData as T;
