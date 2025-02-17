@@ -2,7 +2,7 @@ import RelationalClassSpecification from "./RelationalClassSpecification";
 import {PlainObject} from "@nightmaregaurav/ts-utility-types";
 import {EntityIdentifierType, GetKeyFlatTypeFor, RelationalPropertiesIn} from "./BaseTypes";
 import DataDriver from "./DataDriver";
-import {RelationalRepository} from "./RelationalRepository";
+import RelationalRepository from "./RelationalRepository";
 
 export default class RelationalQuery<Root extends PlainObject, Current extends PlainObject = Root> {
     private includeMap: PlainObject = {};

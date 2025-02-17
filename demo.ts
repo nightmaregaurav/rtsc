@@ -1,8 +1,10 @@
-import DataDriver from "./DataDriver";
-import DefaultDataDriver from "./DefaultDataDriver";
-import RelationalClassSpecificationBuilder from "./RelationalClassSpecificationBuilder";
-import RelationalClassSpecificationRegistry from "./RelationalClassSpecificationRegistry";
-import {RelationalRepository} from "./RelationalRepository";
+import {
+  DataDriver,
+  DefaultDataDriver,
+  RelationalClassSpecificationBuilder,
+  RelationalClassSpecificationRegistry,
+  RelationalRepository,
+} from "./index";
 
 DataDriver.use(new DefaultDataDriver());
 

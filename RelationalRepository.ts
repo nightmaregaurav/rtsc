@@ -5,7 +5,7 @@ import RelationalClassSpecificationRegistry from "./RelationalClassSpecification
 import DataDriver from "./DataDriver";
 import RelationalQuery from "./RelationalQuery";
 
-export class RelationalRepository<T extends PlainObject> {
+export default class RelationalRepository<T extends PlainObject> {
   private readonly classSpecification: RelationalClassSpecification<T>;
 
   constructor(_class: ClassReference<T>) {
