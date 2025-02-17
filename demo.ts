@@ -69,6 +69,10 @@ address2.personId = "1";
     .include("address")
       .thenInclude("person")
     .getAll();
-
+  
   console.log(people);
+  
+  const backup = await DataDriver.instance.dumpAll();
+  console.log(backup);
+  await DataDriver.instance.loadAll(backup);
 })();
