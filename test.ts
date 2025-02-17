@@ -1,11 +1,10 @@
-import {RelationalClassSpecificationBuilder} from "./RelationalClassSpecificationBuilder";
-import {RelationalClassSpecificationRegistry} from "./RelationalClassSpecificationRegistry";
-import {RelationalRepository} from "./RelationalRepository";
 import DataDriver from "./DataDriver";
 import DefaultDataDriver from "./DefaultDataDriver";
-import {PotentialIdentifierTypesIn} from "./BaseTypes";
+import RelationalClassSpecificationBuilder from "./RelationalClassSpecificationBuilder";
+import RelationalClassSpecificationRegistry from "./RelationalClassSpecificationRegistry";
+import {RelationalRepository} from "./RelationalRepository";
 
-
+DataDriver.use(new DefaultDataDriver());
 
 export class Person {
   id: string;
@@ -22,8 +21,6 @@ export class Address {
   person: Person;
 }
 
-var a : PotentialIdentifierTypesIn<Address>;
-
 export const PersonSpecification = new RelationalClassSpecificationBuilder<Person>(Person)
   .useTableName("person") // Optional: By default it uses class name
   .withIdentifier("id")
@@ -39,10 +36,8 @@ export const AddressSpecification = new RelationalClassSpecificationBuilder<Addr
 RelationalClassSpecificationRegistry.register(AddressSpecification);
 RelationalClassSpecificationRegistry.register(PersonSpecification);
 
-DataDriver.use(new DefaultDataDriver());
-
-export const PersonDataHandler = new RelationalRepository(Person);
-export const AddressDataHandler = new RelationalRepository(Address);
+export const PersonRepository = new RelationalRepository(Person);
+export const AddressRepository = new RelationalRepository(Address);
 
 
 const person = new Person();
@@ -63,13 +58,15 @@ address2.city = "Springfield";
 address2.personId = "1";
 
 (async () => {
-  await PersonDataHandler.create(person);
-  await AddressDataHandler.create(address1);
-  await AddressDataHandler.create(address2);
+  await PersonRepository.create(person);
+  await AddressRepository.create(address1);
+  await AddressRepository.create(address2);
   
-  const personQuery = await PersonDataHandler.getQueryable();
-  personQuery.include("address");
-  
-  console.log(await PersonDataHandler.getQueryable());
-  console.log(await AddressDataHandler.getQueryable());
+  const people = await PersonRepository
+    .getQueryable()
+    .include("address")
+      .thenInclude("person")
+    .getAll();
+
+  console.log(people);
 })();

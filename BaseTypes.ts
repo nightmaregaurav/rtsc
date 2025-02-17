@@ -4,7 +4,8 @@ export type EntityPropertyType = string | number | boolean | Date;
 export type EntityIdentifierType = string | number;
 export type RelationalClassesIn<T> = Except<FlattenArrayTypes<TypesInType<T>>, EntityPropertyType>;
 
-export type GetKeyFlatTypeFor<T extends PlainObject, Key extends keyof T> = T[Key] extends (infer U extends PlainObject)[] ? U : T[Key];
+export type GetKeyFlatTypeFor<T extends PlainObject, Key extends keyof T> = 
+  T[Key] extends (infer U extends PlainObject)[] ? U : T[Key];
 
 export type PotentialIdentifierTypesIn<T> = {
   [K in keyof T]: T[K] extends EntityIdentifierType ? K : never;

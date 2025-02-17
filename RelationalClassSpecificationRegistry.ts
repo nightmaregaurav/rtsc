@@ -1,10 +1,10 @@
 import {ClassReference, PlainObject} from "@nightmaregaurav/ts-utility-types";
-import {RelationalClassSpecification} from "./RelationalClassSpecification";
+import RelationalClassSpecification from "./RelationalClassSpecification";
 
-export class RelationalClassSpecificationRegistry {
+export default class RelationalClassSpecificationRegistry {
     private static readonly specifications: PlainObject = {};
 
-    static register<T extends PlainObject>(specification: RelationalClassSpecification<T>): void {
+    public static register<T extends PlainObject>(specification: RelationalClassSpecification<T>): void {
         const existingSpecification = this.specifications[specification.registeredClass.name];
         if (existingSpecification) {
             throw new Error(`A Class Specification is already registered for the class ${existingSpecification.registeredClass.name} which is mapped to table ${existingSpecification.tableName}`);
@@ -18,15 +18,15 @@ export class RelationalClassSpecificationRegistry {
         this.specifications[specification.registeredClass.name] = specification;
     }
 
-    static isRegistered<T extends PlainObject>(specification: RelationalClassSpecification<T>): boolean {
+    public static isRegistered<T extends PlainObject>(specification: RelationalClassSpecification<T>): boolean {
         return !!this.specifications[specification.registeredClass.name];
     }
 
-    static isSpecificationRegisteredFor<T extends PlainObject>(_class: ClassReference<T>): boolean {
+    public static isSpecificationRegisteredFor<T extends PlainObject>(_class: ClassReference<T>): boolean {
         return !!this.specifications[_class.name];
     }
 
-    static getSpecificationFor<T extends PlainObject>(_class: ClassReference<T>): RelationalClassSpecification<T> {
+    public static getSpecificationFor<T extends PlainObject>(_class: ClassReference<T>): RelationalClassSpecification<T> {
         if (!this.specifications[_class.name]) {
             throw new Error("No specification found for class " + _class.name);
         }
@@ -34,7 +34,7 @@ export class RelationalClassSpecificationRegistry {
         return this.specifications[_class.name] as RelationalClassSpecification<T>;
     }
 
-    static getAllSpecifications(): RelationalClassSpecification<PlainObject>[] {
+    public static getAllSpecifications(): RelationalClassSpecification<PlainObject>[] {
         return Object.values(this.specifications) as RelationalClassSpecification<PlainObject>[];
     }
 }
