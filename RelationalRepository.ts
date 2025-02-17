@@ -79,9 +79,12 @@ export default class RelationalRepository<T extends PlainObject> {
   }
   
   private getPureObject(instance: T): PlainObject {
-    const schema = this.classSpecification.schema;
     const obj: PlainObject = {};
-    for (const column of schema) {
+    const relationalProperties = this.classSpecification.relationalProperties.map(x => x.name);
+    for (const column of Object.keys(instance)) {
+      if (relationalProperties.includes(column)) {
+        continue;
+      }
       obj[column] = instance[column];
     }
     return obj;

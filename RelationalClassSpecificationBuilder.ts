@@ -84,14 +84,6 @@ export default class RelationalClassSpecificationBuilder<T extends PlainObject> 
     if (!this.specification.identifier) {
       throw new Error("Cannot create a specification without an identifier.");
     }
-
-    this.specification.schema = Object.keys(
-      this.specification.registeredClass.prototype
-    ).filter(
-      x => !this.specification.relationalProperties.find(
-        y => y.name === x
-      )
-    );
     this.createTableIndex(this.specification.tableName).then();
     return this.specification;
   }

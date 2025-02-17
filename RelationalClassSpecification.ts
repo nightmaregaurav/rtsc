@@ -8,5 +8,4 @@ export default class RelationalClassSpecification<T extends PlainObject> {
     identifier: string;
     isIdentifierString: boolean;
     relationalProperties: RelationalProperty<RelationalClassesIn<T>>[];
-    schema: string[];
 }
