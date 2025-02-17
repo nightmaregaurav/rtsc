@@ -17,7 +17,7 @@ npm install @nightmaregaurav/rtsc
 // DataDriverSetup.ts (Somewhere in your entry point you must import this file/or place the register calls in a method and call it.)
 import {DataDriver, DefaultDataDriver} from "@nightmaregaurav/rtsc";
 
-DataDriver.use(new DefaultDataDriver());
+DataDriver.configure(new DefaultDataDriver());
 ```
 
 ### Defining Entity Classes

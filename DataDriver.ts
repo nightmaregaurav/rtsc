@@ -11,7 +11,7 @@ export default class DataDriver {
     return DataDriver._instance;
   }
 
-  public static use(driver: IDataDriver) {
+  public static configure(driver: IDataDriver) {
     DataDriver._instance = driver;
   }
   

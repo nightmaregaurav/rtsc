@@ -7,8 +7,13 @@ import RelationalRepository from "./RelationalRepository";
 export default class RelationalQuery<Root extends PlainObject, Current extends PlainObject = Root> {
     private includeMap: PlainObject = {};
     private currentIncludePointer: string = "";
-
+    
     constructor(private rootClassSpecification: RelationalClassSpecification<Root>) {}
+    
+    private injectCurrentIncludePointer(currentIncludePointer: string) {
+        this.currentIncludePointer = currentIncludePointer;
+        return this;
+    }
 
     private injectIncludeMap(includeMap: PlainObject) {
         this.includeMap = includeMap;
@@ -23,7 +28,10 @@ export default class RelationalQuery<Root extends PlainObject, Current extends P
         }
         this.currentIncludePointer = key as string;
         
-        return new RelationalQuery<Root, GetKeyFlatTypeFor<Root, K>>(this.rootClassSpecification);
+        const query = new RelationalQuery<Root, GetKeyFlatTypeFor<Root, K>>(this.rootClassSpecification);
+        query.injectCurrentIncludePointer(this.currentIncludePointer);
+        query.injectIncludeMap(this.includeMap);
+        return query;
     }
 
     thenInclude<K extends RelationalPropertiesIn<Current>>(
@@ -51,7 +59,10 @@ export default class RelationalQuery<Root extends PlainObject, Current extends P
         
         this.currentIncludePointer = currentIncludePointer + "::" + (key as string);
         
-        return new RelationalQuery<Root, GetKeyFlatTypeFor<Current, K>>(this.rootClassSpecification);
+        const query = new RelationalQuery<Root, GetKeyFlatTypeFor<Current, K>>(this.rootClassSpecification);
+        query.injectCurrentIncludePointer(this.currentIncludePointer);
+        query.injectIncludeMap(this.includeMap);
+        return query;
     }
 
     async getById(id: EntityIdentifierType) : Promise<Root>{

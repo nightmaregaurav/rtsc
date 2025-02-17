@@ -6,7 +6,7 @@ import {
   RelationalRepository,
 } from "./index";
 
-DataDriver.use(new DefaultDataDriver());
+DataDriver.configure(new DefaultDataDriver());
 
 export class Person {
   id: string;
