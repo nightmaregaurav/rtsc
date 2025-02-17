@@ -5,7 +5,7 @@
 ***
 
 ## Description
-RTSC is a library that allows you to define classes that can be stored and retrieved from a data storage in a relational way. It is designed to mimic the behavior of a relational database ORM, but it is not an ORM. Neither is it supposed to be used with remote database. It pulls entire table from storage and then performs operations to bind relational data and store it back. So, it is not suitable for remote databases. But it can be helpful for local storages, like LocalStorage, IndexedDB, sql.js, SessionStorage, etc.
+RTSC is a library that allows you to define classes that can be stored and retrieved from data storage in a relational way. It is designed to mimic the behavior of a relational database ORM, but it is not an ORM. Neither is it supposed to be used with a remote database. It can be helpful for handling data in local storage, like LocalStorage, IndexedDB, sql.js, SessionStorage, etc.
 
 ## Installation
 ```bash
