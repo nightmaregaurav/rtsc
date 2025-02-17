@@ -12,7 +12,14 @@ RTSC is a library that allows you to define classes that can be stored and retri
 npm install @nightmaregaurav/rtsc
 ````
 
-## Usage ([Watch video](https://www.youtube.com/watch?v=ZLLvKlQ8t2U))
+### Declaring DataDriver
+```typescript
+// DataDriverSetup.ts (Somewhere in your entry point you must import this file/or place the register calls in a method and call it.)
+import {DataDriver, DefaultDataDriver} from "@nightmaregaurav/rtsc";
+
+DataDriver.use(new DefaultDataDriver());
+```
+
 ### Defining Entity Classes
 ```typescript
 // Person.ts
@@ -41,25 +48,25 @@ export class Address {
 ### Defining Entity Class Specifications
 ```typescript
 // PersonSpecification.ts
-import {RelationalClassSpecificationBuilder} from "@nightmaregaurav/rtsc/RelationalClassSpecificationBuilder";
+import {RelationalClassSpecificationBuilder} from "@nightmaregaurav/rtsc";
 import {Person} from "./Person";
 import {Address} from "./Address";
 
-export const PersonSpecification = new RelationalClassSpecificationBuilder(Person)
-    .withTableName("person") // Optional: By default it uses class name
-    .hasIdentifier("id")
+export const PersonSpecification = new RelationalClassSpecificationBuilder<Person>(Person)
+    .useTableName("person") // Optional: By default it uses class name
+    .withIdentifier("id")
     .hasMany("address", Address, "personId")
     .build();
 ```
 ```typescript
 // AddressSpecification.ts
-import {RelationalClassSpecificationBuilder} from "@nightmaregaurav/rtsc/RelationalClassSpecificationBuilder";
+import {RelationalClassSpecificationBuilder} from "@nightmaregaurav/rtsc";
 import {Person} from "./Person";
 import {Address} from "./Address";
 
-export const AddressSpecification = new RelationalClassSpecificationBuilder(Address)
-    .withTableName("address") // Optional: By default it uses class name
-    .hasIdentifier("id")
+export const AddressSpecification = new RelationalClassSpecificationBuilder<Address>(Address)
+    .useTableName("address") // Optional: By default it uses class name
+    .withIdentifier("id")
     .hasOne("person", Person, "personId")
     .build();
 ```
@@ -67,7 +74,7 @@ export const AddressSpecification = new RelationalClassSpecificationBuilder(Addr
 ### Registering Entity Class Specifications
 ```typescript
 // DataRegistry.ts (Somewhere in your entry point you must import this file/or place the register calls in a method and call it.)
-import {RelationalClassSpecificationRegistry} from "@nightmaregaurav/rtsc/RelationalClassSpecificationRegistry";
+import {RelationalClassSpecificationRegistry} from "@nightmaregaurav/rtsc";
 import {PersonSpecification} from "./PersonSpecification";
 import {AddressSpecification} from "./AddressSpecification";
 
@@ -75,34 +82,16 @@ RelationalClassSpecificationRegistry.register(AddressSpecification);
 RelationalClassSpecificationRegistry.register(PersonSpecification);
 ```
 
-### Setup DataStore (Optional: By default it uses LocalStorage)
+### Setup Repositories
 ```typescript
-// DataStorage.ts (Somewhere in your entry point you must import this file/or place the register calls in a method and call it.)
-import {RelationalClassStorageDriver} from "@nightmaregaurav/rtsc/RelationalClassStorageDriver";
+// Repositories.ts
+import {RelationalRepository} from "@nightmaregaurav/rtsc";
 
-// You can use any storage here, like LocalStorage, IndexedDB, sql.js, SessionStorage, etc.
-// skipping this step will use LocalStorage
-const DataStorage = new Map<string, any[]>();
-if (!RelationalClassStorageDriver.isConfigured()) {
-    RelationalClassStorageDriver.configure(
-        async table => await (async () => DataStorage.get(table) || [])(),
-        async (table, data) => await (async () => { DataStorage.set(table, data); })()
-    );
-}
+export const PersonRepository = new RelationalRepository(Person);
+export const AddressRepository = new RelationalRepository(Address);
 ```
 
-### Creating Data Handlers
-```typescript
-// DataHandlers.ts
-import {RelationalClassDataHandler} from "@nightmaregaurav/rtsc/RelationalClassDataHandler";
-import {Person} from "./Person";
-import {Address} from "./Address";
-
-export const PersonDataHandler = new RelationalClassDataHandler(Person);
-export const AddressDataHandler = new RelationalClassDataHandler(Address, 1); // 1 is the depth of relational data
-```
-
-### Using Data Handlers
+### Usage in Code
 ```typescript
 const person = new Person();
 person.id = "1";
@@ -122,16 +111,21 @@ address2.city = "Springfield";
 address2.personId = "1";
 
 (async () => {
-    await PersonDataHandler.createIfNotExists(person);
-    await AddressDataHandler.createIfNotExists(address1);
-    await AddressDataHandler.createIfNotExists(address2);
-    console.log(await PersonDataHandler.withDepth(2).retrieve("1"));
-    console.log(await AddressDataHandler.retrieve("1"));
+    await PersonRepository.create(person);
+    await AddressRepository.create(address1);
+    await AddressRepository.create(address2);
+
+    const people = await PersonRepository
+        .getQueryable()
+        .include("address")
+        .thenInclude("person")
+        .getAll();
+
+   console.log(people);
 })();
 
 // Output:
-
-// Person {
+// [Person {
 //     id: '1',
 //     name: 'John',
 //     age: 30,
@@ -141,32 +135,43 @@ address2.personId = "1";
 //             street: '123 Main St',
 //             city: 'Springfield',
 //             personId: '1',
-//             person: [Circular *1]
+//             person: {
+//                 id: '1',
+//                 name: 'John',
+//                 age: 30,
+//                 address: undefined
+//             }
 //         },
 //         Address {
 //             id: '2',
 //             street: '456 Elm St',
 //             city: 'Springfield',
 //             personId: '1',
-//             person: [Circular *1]
+//             person: {
+//                 id: '1',
+//                 name: 'John',
+//                 age: 30,
+//                 address: undefined
+//             }
 //         }
 //     ]
-// }
+// }]
 ```
 
 ### Backup and Restore (Clearing the storage is not handled, so you need to handle it yourself)
 ```typescript
 // Backup.ts
-import {RelationalClassDataHandler} from "@nightmaregaurav/rtsc/RelationalClassDataHandler";
+import {DataDriver} from "@nightmaregaurav/rtsc";
 
-const dump = await RelationalClassDataHandler.dumpAllData(); // dump is a Map<string, any[]> where string is the table name and any[] is the data
-... // Save the dump to a file or send it to a server
+const dump = await DataDriver.instance.dumpAll();
+// do whatever you want with dump
 ```
 ```typescript
 // Restore.ts
-import {RelationalClassDataHandler} from "@nightmaregaurav/rtsc/RelationalClassDataHandler";
+import {DataDriver} from "@nightmaregaurav/rtsc";
 
-await RelationalClassDataHandler.loadAllData(dump); // dump is a Map<string, any[]> where string is the table name and any[] is the data
+// get dump from somewhere
+await DataDriver.instance.loadAll(dump);
 ```
 
 ## How to Contribute

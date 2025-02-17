@@ -1,15 +1,12 @@
-import {ClassReference} from "@nightmaregaurav/ts-utility-types";
+import {ClassReference, PlainObject} from "@nightmaregaurav/ts-utility-types";
+import {RelationalClassesIn} from "./BaseTypes";
+import RelationalProperty from "./RelationalProperty";
 
-export class RelationalProperty {
-    name: string;
-    relatedClass: ClassReference<any>;
-    idPropName: string;
-    isList: boolean;
-}
-
-export class RelationalClassSpecification {
-    registeredClass: ClassReference<any>;
+export default class RelationalClassSpecification<T extends PlainObject> {
+    registeredClass: ClassReference<T>;
     tableName: string;
     identifier: string;
-    relationalProperties: RelationalProperty[];
+    isIdentifierString: boolean;
+    relationalProperties: RelationalProperty<RelationalClassesIn<T>>[];
+    schema: string[];
 }
