@@ -29,7 +29,7 @@ export class Person {
     id: string;
     name: string;
     age: number;
-    address: Address[]; // Relational property (List) does not need to be optional
+    address: Address[];  // Relational property (list) does not need to be optional
 }
 ```
 ```typescript
@@ -41,7 +41,7 @@ export class Address {
     street: string;
     city: string;
     personId: string;
-    person?: Person; // Optional: relational property is always optional just in case it is not included
+    person?: Person;  // Relational property (non-list) should always be optional as it will be undefined when not included
 }
 ```
 
