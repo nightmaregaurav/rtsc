@@ -15,11 +15,11 @@ export default class DataDriver {
     DataDriver._instance = driver;
   }
   
-  static getTableIndexKey(tableName: string): string {
+  private static getTableIndexKey(tableName: string): string {
     return `::${tableName}::index`;
   }
   
-  static getFkIndexKey(
+  private static getFkIndexKey(
     nonFkTableName: string,
     fkTableName: string,
     fk: EntityIdentifierType
@@ -30,11 +30,12 @@ export default class DataDriver {
   static async getIndex(
     tableName: string
   ): Promise<EntityIdentifierType[]> {
-    return await DataDriver
+    const index = await DataDriver
       .instance
       .read<EntityIdentifierType[]>(
         DataDriver.getTableIndexKey(tableName)
       );
+    return index || [];
   }
   
   static async getFkIndex(
@@ -51,6 +52,10 @@ export default class DataDriver {
   
   static async addIndex(tableName: string, index: EntityIdentifierType): Promise<void> {
     const existingIndex = await DataDriver.getIndex(tableName);
+    if (!existingIndex) {
+      await DataDriver.instance.write(DataDriver.getTableIndexKey(tableName), [index]);
+      return;
+    }
     if (existingIndex.includes(index)) {
       throw new Error(`Index constraint violation: ${index} already exists in ${tableName}`);
     }
@@ -115,6 +120,16 @@ export default class DataDriver {
     await DataDriver.instance.write(
       DataDriver.getFkIndexKey(nonFkTableName, fkTableName, fk),
       newIndexes
+    );
+  }
+  
+  static async removeFkIndexRecord(
+    nonFkTableName: string,
+    fkTableName: string,
+    fk: EntityIdentifierType
+  ): Promise<void> {
+    await DataDriver.instance.remove(
+      DataDriver.getFkIndexKey(nonFkTableName, fkTableName, fk)
     );
   }
   

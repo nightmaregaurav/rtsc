@@ -84,15 +84,6 @@ export default class RelationalClassSpecificationBuilder<T extends PlainObject> 
     if (!this.specification.identifier) {
       throw new Error("Cannot create a specification without an identifier.");
     }
-    this.createTableIndex(this.specification.tableName).then();
     return this.specification;
-  }
-
-  private async createTableIndex(tableName: string): Promise<void> {
-    const tableIndexKey = DataDriver.getTableIndexKey(tableName);
-    const tableIndex = await DataDriver.instance.read<EntityIdentifierType[]>(tableIndexKey);
-    if (!tableIndex) {
-      await DataDriver.instance.write(tableIndexKey, []);
-    }
   }
 }

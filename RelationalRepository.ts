@@ -72,8 +72,7 @@ export default class RelationalRepository<T extends PlainObject> {
         const relatedClassSpecification = RelationalClassSpecificationRegistry
           .getSpecificationFor(relationalProperty.relatedClass);
         const fkTableName = relatedClassSpecification.tableName;
-        const fkIndexKey = DataDriver.getFkIndexKey(tableName, fkTableName, identifier);
-        await DataDriver.instance.remove(fkIndexKey);
+        await DataDriver.removeFkIndexRecord(tableName, fkTableName, identifier);
       }
     }
   }
