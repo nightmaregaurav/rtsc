@@ -3,6 +3,7 @@ import {PlainObject} from "@nightmaregaurav/ts-utility-types";
 import {EntityIdentifierType, GetKeyFlatTypeFor, RelationalPropertiesIn} from "./BaseTypes";
 import DataDriver from "./DataDriver";
 import RelationalRepository from "./RelationalRepository";
+import RelationalClassSpecificationRegistry from "./RelationalClassSpecificationRegistry";
 
 export default class RelationalQuery<Root extends PlainObject, Current extends PlainObject = Root> {
     private includeMap: PlainObject = {};
@@ -139,7 +140,11 @@ export default class RelationalQuery<Root extends PlainObject, Current extends P
             );
             const isRelationalPropertyAList = relationalPropertyDefinition.isList;
             if(isRelationalPropertyAList){
-                const fkTableName = relationalPropertyDefinition.relatedClass.name;
+                const relationalClassSpecification =
+                  RelationalClassSpecificationRegistry.getSpecificationFor(
+                    relationalPropertyDefinition.relatedClass
+                  );
+                const fkTableName = relationalClassSpecification.tableName;
                 const nonFkTableName = classSpecification.tableName;
                 const fk = data[classSpecification.identifier];
                 const idsToFetch = await DataDriver.getFkIndex(
