@@ -1,15 +1,15 @@
-import RelationalClassSpecification from "./RelationalClassSpecification";
+import ClassSpecification from "./ClassSpecification";
 import {PlainObject} from "@nightmaregaurav/ts-utility-types";
 import {EntityIdentifierType, GetKeyFlatTypeFor, RelationalPropertiesIn} from "./BaseTypes";
 import DataDriver from "./DataDriver";
 import RelationalRepository from "./RelationalRepository";
-import RelationalClassSpecificationRegistry from "./RelationalClassSpecificationRegistry";
+import ClassSpecificationRegistry from "./ClassSpecificationRegistry";
 
 export default class RelationalQuery<Root extends PlainObject, Current extends PlainObject = Root> {
     private includeMap: PlainObject = {};
     private currentIncludePointer: string = "";
     
-    constructor(private rootClassSpecification: RelationalClassSpecification<Root>) {}
+    constructor(private rootClassSpecification: ClassSpecification<Root>) {}
     
     private injectCurrentIncludePointer(currentIncludePointer: string) {
         this.currentIncludePointer = currentIncludePointer;
@@ -67,12 +67,12 @@ export default class RelationalQuery<Root extends PlainObject, Current extends P
     }
 
     async getById(id: EntityIdentifierType) : Promise<Root>{
-        const dataKey = DataDriver.getTableDataKey(this.rootClassSpecification.tableName, id);
+        const dataKey = DataDriver.getTableDataKey(this.rootClassSpecification.table, id);
         const data = await DataDriver.instance.read<Root>(dataKey);
         if (!data){
             throw new Error(
               `No data found for id: ${id}. 
-               Table ${this.rootClassSpecification.tableName} does not 
+               Table ${this.rootClassSpecification.table} does not 
                contain row with property ${this.rootClassSpecification.identifier} having value ${id}`
             );
         }
@@ -86,7 +86,7 @@ export default class RelationalQuery<Root extends PlainObject, Current extends P
     async getByIds(ids: EntityIdentifierType[]) : Promise<Root[]>{
         const result: Root[] = [];
         for(const id of ids){
-            const dataKey = DataDriver.getTableDataKey(this.rootClassSpecification.tableName, id);
+            const dataKey = DataDriver.getTableDataKey(this.rootClassSpecification.table, id);
             const data = await DataDriver.instance.read<Root>(dataKey);
             if (data){
                 const attachedData = await RelationalQuery.attachIncludesAndGet(
@@ -101,10 +101,10 @@ export default class RelationalQuery<Root extends PlainObject, Current extends P
     }
     
     async getAll(): Promise<Root[]> {
-        const indexes = await DataDriver.getIndex(this.rootClassSpecification.tableName);
+        const indexes = await DataDriver.getTableIndex(this.rootClassSpecification.table);
         const result: Root[] = [];
         for(const index of indexes){
-            const dataKey = DataDriver.getTableDataKey(this.rootClassSpecification.tableName, index);
+            const dataKey = DataDriver.getTableDataKey(this.rootClassSpecification.table, index);
             const data = await DataDriver.instance.read<Root>(dataKey);
             if (data){
                 const attachedData = await RelationalQuery.attachIncludesAndGet(
@@ -120,7 +120,7 @@ export default class RelationalQuery<Root extends PlainObject, Current extends P
     
     private static async attachIncludesAndGet<T extends PlainObject>(
       data: T,
-      classSpecification: RelationalClassSpecification<T>,
+      classSpecification: ClassSpecification<T>,
       includeContext: PlainObject
     ): Promise<T> {
         const relationalProperties = classSpecification.relationalProperties;
@@ -131,23 +131,23 @@ export default class RelationalQuery<Root extends PlainObject, Current extends P
             if (!relationalPropertyDefinition){
                 throw new Error(
                   `Invalid include key: ${includeKey}.
-                   No such relational property found in class: ${classSpecification.registeredClass.name}`
+                   No such relational property found in class: ${classSpecification.class.name}`
                 );
             }
             
             const relationalPropertyRepository = new RelationalRepository(
-              relationalPropertyDefinition.relatedClass
+              relationalPropertyDefinition.class
             );
             const isRelationalPropertyAList = relationalPropertyDefinition.isList;
             if(isRelationalPropertyAList){
                 const relationalClassSpecification =
-                  RelationalClassSpecificationRegistry.getSpecificationFor(
-                    relationalPropertyDefinition.relatedClass
+                  ClassSpecificationRegistry.getSpecificationFor(
+                    relationalPropertyDefinition.class
                   );
-                const fkTableName = relationalClassSpecification.tableName;
-                const nonFkTableName = classSpecification.tableName;
+                const fkTableName = relationalClassSpecification.table;
+                const nonFkTableName = classSpecification.table;
                 const fk = data[classSpecification.identifier];
-                const idsToFetch = await DataDriver.getFkIndex(
+                const idsToFetch = await DataDriver.getRelationIndex(
                   nonFkTableName,
                   fkTableName,
                   fk
@@ -158,7 +158,7 @@ export default class RelationalQuery<Root extends PlainObject, Current extends P
                   .getByIds(idsToFetch || []);
             }
             if(!isRelationalPropertyAList){
-                const fk = data[relationalPropertyDefinition.fkPropName];
+                const fk = data[relationalPropertyDefinition.idProperty];
                 if (!fk){
                     attachedData[includeKey] = null;
                 } else {

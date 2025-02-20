@@ -3,9 +3,8 @@ import {RelationalClassesIn} from "./BaseTypes";
 import RelationalProperty from "./RelationalProperty";
 
 export default class RelationalClassSpecification<T extends PlainObject> {
-    registeredClass: ClassReference<T>;
-    tableName: string;
+    class: ClassReference<T>;
+    table: string;
     identifier: string;
-    isIdentifierString: boolean;
     relationalProperties: RelationalProperty<RelationalClassesIn<T>>[];
 }
