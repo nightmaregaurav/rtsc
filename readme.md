@@ -29,7 +29,7 @@ export class Person {
   id: string;
   name: string;
   age: number;
-  address: Address[]; // Never define a related property (List) as nullable or optional
+  address: Address[]; // Never define a related property as nullable or optional
 }
 ```
 ```typescript
@@ -41,7 +41,7 @@ export class Address {
   street: string;
   city: string;
   personId: string;
-  person: Person;  // Never define a related property(Non-List) as nullable or optional; Instead, make the relatedId nullable or optional
+  person: Person;  // Never define a related property as nullable or optional
 }
 ```
 
