@@ -12,7 +12,7 @@ export class Person {
   id: string;
   name: string;
   age: number;
-  address: Address[];
+  address: Address[]; // Never define a related property as nullable or optional
 }
 
 export class Address {
@@ -20,9 +20,8 @@ export class Address {
   street: string;
   city: string;
   personId: string;
-  person: Person;
+  person: Person;  // Never define a related property as nullable or optional
 }
-
 export const PersonSpecification = new ClassSpecificationBuilder<Person>(Person)
   .useTableName("person") // Optional: By default it uses class name
   .withIdentifier("id")
@@ -76,10 +75,10 @@ address5.street = "112 Pine St";
 address5.city = "Springfield";
 
 const person2 = new Person();
-person1.id = "2";
-person1.name = "Jane"
-person1.age = 25;
-person1.address = [address4, address5];
+person2.id = "2";
+person2.name = "Jane"
+person2.age = 25;
+person2.address = [address4, address5];
 
 (async () => {
   await PersonRepository.create(person1);  // adds person1; address1, address2, address3 will not be added as they are not attached to person1
