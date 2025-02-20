@@ -61,7 +61,7 @@ export default class DefaultDataDriver implements IDataDriver {
     return new Promise((resolve, reject) => {
       try {
         for (const key in data) {
-          if (data.hasOwnProperty(key)) {
+          if (data.hasOwnProperty(key) && key.startsWith(this.keyPrefix)) {
             localStorage.setItem(key, data[key]);
           }
         }

@@ -1,40 +1,36 @@
-import RelationalClassSpecification from "./RelationalClassSpecification";
+import ClassSpecification from "./ClassSpecification";
 import {ClassReference, PlainObject} from "@nightmaregaurav/ts-utility-types";
 import {
   CollectionRelationalPropertiesIn,
-  EntityIdentifierType,
   PotentialIdentifierTypesIn,
   RelationalClassesIn,
   SingularRelationalPropertiesIn
 } from "./BaseTypes";
-import DataDriver from "./DataDriver";
 
-export default class RelationalClassSpecificationBuilder<T extends PlainObject> {
-  private readonly specification: RelationalClassSpecification<T> = new RelationalClassSpecification<T>();
+export default class ClassSpecificationBuilder<T extends PlainObject> {
+  private readonly specification: ClassSpecification<T> = new ClassSpecification<T>();
   private isTableNameManuallySet: boolean = false;
 
   constructor(_class: ClassReference<T>) {
-    this.specification.registeredClass = _class;
-    this.specification.tableName = _class.name;
+    this.specification.class = _class;
+    this.specification.table = _class.name;
     this.specification.relationalProperties = [];
   }
 
-  public useTableName(tableName: string): RelationalClassSpecificationBuilder<T> {
+  public useTableName(tableName: string): ClassSpecificationBuilder<T> {
     if (this.isTableNameManuallySet) {
       throw new Error("Cannot set the table name more than once.");
     }
-    this.specification.tableName = tableName;
+    this.specification.table = tableName;
     this.isTableNameManuallySet = true;
     return this;
   }
 
-  public withIdentifier(identifier: PotentialIdentifierTypesIn<T>): RelationalClassSpecificationBuilder<T> {
+  public withIdentifier(identifier: PotentialIdentifierTypesIn<T>): ClassSpecificationBuilder<T> {
     if (this.specification.identifier) {
       throw new Error("Cannot set multiple identifiers for the same class.");
     }
     this.specification.identifier = identifier as string;
-    this.specification.isIdentifierString = 
-      typeof this.specification.registeredClass.prototype[identifier] === "string";
     return this;
   }
 
@@ -42,7 +38,7 @@ export default class RelationalClassSpecificationBuilder<T extends PlainObject> 
     property: SingularRelationalPropertiesIn<T>,
     relatedClass: ClassReference<TT>,
     foreignKeyProperty: PotentialIdentifierTypesIn<T>
-  ): RelationalClassSpecificationBuilder<T> {
+  ): ClassSpecificationBuilder<T> {
     if (
       this.specification.relationalProperties.find(
         x => x.name === property
@@ -52,8 +48,8 @@ export default class RelationalClassSpecificationBuilder<T extends PlainObject> 
     }
     this.specification.relationalProperties.push({
       name: property as string,
-      relatedClass: relatedClass,
-      fkPropName: foreignKeyProperty as string,
+      class: relatedClass,
+      idProperty: foreignKeyProperty as string,
       isList: false
     });
     return this;
@@ -63,7 +59,7 @@ export default class RelationalClassSpecificationBuilder<T extends PlainObject> 
     property: CollectionRelationalPropertiesIn<T>,
     relatedClass: ClassReference<TT>,
     foreignKeyProperty: PotentialIdentifierTypesIn<TT>
-  ): RelationalClassSpecificationBuilder<T> {
+  ): ClassSpecificationBuilder<T> {
     if (
       this.specification.relationalProperties.find(
         x => x.name === property
@@ -73,14 +69,14 @@ export default class RelationalClassSpecificationBuilder<T extends PlainObject> 
     }
     this.specification.relationalProperties.push({
       name: property as string,
-      relatedClass: relatedClass,
-      fkPropName: foreignKeyProperty as string,
+      class: relatedClass,
+      idProperty: foreignKeyProperty as string,
       isList: true
     });
     return this;
   }
 
-  public build(): RelationalClassSpecification<T> {
+  public build(): ClassSpecification<T> {
     if (!this.specification.identifier) {
       throw new Error("Cannot create a specification without an identifier.");
     }

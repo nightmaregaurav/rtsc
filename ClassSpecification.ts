@@ -2,10 +2,9 @@ import {ClassReference, PlainObject} from "@nightmaregaurav/ts-utility-types";
 import {RelationalClassesIn} from "./BaseTypes";
 import RelationalProperty from "./RelationalProperty";
 
-export default class RelationalClassSpecification<T extends PlainObject> {
-    registeredClass: ClassReference<T>;
-    tableName: string;
+export default class ClassSpecification<T extends PlainObject> {
+    class: ClassReference<T>;
+    table: string;
     identifier: string;
-    isIdentifierString: boolean;
     relationalProperties: RelationalProperty<RelationalClassesIn<T>>[];
 }
