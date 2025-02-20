@@ -1,7 +1,7 @@
 import {ClassReference, PlainObject} from "@nightmaregaurav/ts-utility-types";
 import ClassSpecification from "./ClassSpecification";
 
-export default class RelationalClassSpecificationRegistry {
+export default class ClassSpecificationRegistry {
     private static readonly specifications: PlainObject = {};
 
     public static register<T extends PlainObject>(specification: ClassSpecification<T>): void {

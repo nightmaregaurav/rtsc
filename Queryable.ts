@@ -2,10 +2,10 @@ import ClassSpecification from "./ClassSpecification";
 import {PlainObject} from "@nightmaregaurav/ts-utility-types";
 import {EntityIdentifierType, GetKeyFlatTypeFor, RelationalPropertiesIn} from "./BaseTypes";
 import DataDriver from "./DataDriver";
-import RelationalRepository from "./RelationalRepository";
+import Repository from "./Repository";
 import ClassSpecificationRegistry from "./ClassSpecificationRegistry";
 
-export default class RelationalQuery<Root extends PlainObject, Current extends PlainObject = Root> {
+export default class Queryable<Root extends PlainObject, Current extends PlainObject = Root> {
     private includeMap: PlainObject = {};
     private currentIncludePointer: string = "";
     
@@ -23,13 +23,13 @@ export default class RelationalQuery<Root extends PlainObject, Current extends P
     
     include<K extends RelationalPropertiesIn<Root>>(
       key: K
-    ): RelationalQuery<Root, GetKeyFlatTypeFor<Root, K>> {
+    ): Queryable<Root, GetKeyFlatTypeFor<Root, K>> {
         if (this.includeMap[key as string] === undefined){
             this.includeMap[key as string] = {};
         }
         this.currentIncludePointer = key as string;
         
-        const query = new RelationalQuery<Root, GetKeyFlatTypeFor<Root, K>>(this.rootClassSpecification);
+        const query = new Queryable<Root, GetKeyFlatTypeFor<Root, K>>(this.rootClassSpecification);
         query.injectCurrentIncludePointer(this.currentIncludePointer);
         query.injectIncludeMap(this.includeMap);
         return query;
@@ -37,7 +37,7 @@ export default class RelationalQuery<Root extends PlainObject, Current extends P
 
     thenInclude<K extends RelationalPropertiesIn<Current>>(
       key: K
-    ): RelationalQuery<Root, GetKeyFlatTypeFor<Current, K>> {
+    ): Queryable<Root, GetKeyFlatTypeFor<Current, K>> {
         if (this.currentIncludePointer === ""){
             throw new Error("Cannot call thenInclude without calling include first.");
         }
@@ -60,7 +60,7 @@ export default class RelationalQuery<Root extends PlainObject, Current extends P
         
         this.currentIncludePointer = currentIncludePointer + "::" + (key as string);
         
-        const query = new RelationalQuery<Root, GetKeyFlatTypeFor<Current, K>>(this.rootClassSpecification);
+        const query = new Queryable<Root, GetKeyFlatTypeFor<Current, K>>(this.rootClassSpecification);
         query.injectCurrentIncludePointer(this.currentIncludePointer);
         query.injectIncludeMap(this.includeMap);
         return query;
@@ -76,7 +76,7 @@ export default class RelationalQuery<Root extends PlainObject, Current extends P
                contain row with property ${this.rootClassSpecification.identifier} having value ${id}`
             );
         }
-        return RelationalQuery.attachIncludesAndGet(
+        return Queryable.attachIncludesAndGet(
           data,
           this.rootClassSpecification,
           this.includeMap
@@ -89,7 +89,7 @@ export default class RelationalQuery<Root extends PlainObject, Current extends P
             const dataKey = DataDriver.getTableDataKey(this.rootClassSpecification.table, id);
             const data = await DataDriver.instance.read<Root>(dataKey);
             if (data){
-                const attachedData = await RelationalQuery.attachIncludesAndGet(
+                const attachedData = await Queryable.attachIncludesAndGet(
                   data,
                   this.rootClassSpecification,
                   this.includeMap
@@ -107,7 +107,7 @@ export default class RelationalQuery<Root extends PlainObject, Current extends P
             const dataKey = DataDriver.getTableDataKey(this.rootClassSpecification.table, index);
             const data = await DataDriver.instance.read<Root>(dataKey);
             if (data){
-                const attachedData = await RelationalQuery.attachIncludesAndGet(
+                const attachedData = await Queryable.attachIncludesAndGet(
                   data,
                   this.rootClassSpecification,
                   this.includeMap
@@ -126,31 +126,32 @@ export default class RelationalQuery<Root extends PlainObject, Current extends P
         const relationalProperties = classSpecification.relationalProperties;
         const attachedData: PlainObject = {...data};
         for(const includeKey in includeContext){
-            const relationalPropertyDefinition = relationalProperties
+            const relationalProperty = relationalProperties
               .find(x => x.name === includeKey);
-            if (!relationalPropertyDefinition){
+            if (!relationalProperty){
                 throw new Error(
                   `Invalid include key: ${includeKey}.
                    No such relational property found in class: ${classSpecification.class.name}`
                 );
             }
-            
-            const relationalPropertyRepository = new RelationalRepository(
-              relationalPropertyDefinition.class
+            const relationalPropertyRepository = new Repository(
+              relationalProperty.class
             );
-            const isRelationalPropertyAList = relationalPropertyDefinition.isList;
+            const isRelationalPropertyAList = relationalProperty.isList;
             if(isRelationalPropertyAList){
                 const relationalClassSpecification =
                   ClassSpecificationRegistry.getSpecificationFor(
-                    relationalPropertyDefinition.class
+                    relationalProperty.class
                   );
-                const fkTableName = relationalClassSpecification.table;
-                const nonFkTableName = classSpecification.table;
-                const fk = data[classSpecification.identifier];
+                const relatedTableName = relationalClassSpecification.table;
+                const currentTableName = classSpecification.table;
+                const relatedPropertyIdPropertyName = relationalProperty.idProperty;
+                const relatedPropertyId = data[classSpecification.identifier];
                 const idsToFetch = await DataDriver.getRelationIndex(
-                  nonFkTableName,
-                  fkTableName,
-                  fk
+                  currentTableName,
+                  relatedTableName,
+                  relatedPropertyIdPropertyName,
+                  relatedPropertyId
                 );
                 attachedData[includeKey] = await relationalPropertyRepository
                   .getQueryable()
@@ -158,14 +159,14 @@ export default class RelationalQuery<Root extends PlainObject, Current extends P
                   .getByIds(idsToFetch || []);
             }
             if(!isRelationalPropertyAList){
-                const fk = data[relationalPropertyDefinition.idProperty];
-                if (!fk){
+                const relatedPropertyId = data[relationalProperty.idProperty];
+                if (!relatedPropertyId){
                     attachedData[includeKey] = null;
                 } else {
                     attachedData[includeKey] = await relationalPropertyRepository
                       .getQueryable()
                       .injectIncludeMap(includeContext[includeKey])
-                      .getById(fk);
+                      .getById(relatedPropertyId);
                 }
             }
         }

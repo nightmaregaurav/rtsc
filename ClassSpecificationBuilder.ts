@@ -7,7 +7,7 @@ import {
   SingularRelationalPropertiesIn
 } from "./BaseTypes";
 
-export default class RelationalClassSpecificationBuilder<T extends PlainObject> {
+export default class ClassSpecificationBuilder<T extends PlainObject> {
   private readonly specification: ClassSpecification<T> = new ClassSpecification<T>();
   private isTableNameManuallySet: boolean = false;
 
@@ -17,7 +17,7 @@ export default class RelationalClassSpecificationBuilder<T extends PlainObject> 
     this.specification.relationalProperties = [];
   }
 
-  public useTableName(tableName: string): RelationalClassSpecificationBuilder<T> {
+  public useTableName(tableName: string): ClassSpecificationBuilder<T> {
     if (this.isTableNameManuallySet) {
       throw new Error("Cannot set the table name more than once.");
     }
@@ -26,7 +26,7 @@ export default class RelationalClassSpecificationBuilder<T extends PlainObject> 
     return this;
   }
 
-  public withIdentifier(identifier: PotentialIdentifierTypesIn<T>): RelationalClassSpecificationBuilder<T> {
+  public withIdentifier(identifier: PotentialIdentifierTypesIn<T>): ClassSpecificationBuilder<T> {
     if (this.specification.identifier) {
       throw new Error("Cannot set multiple identifiers for the same class.");
     }
@@ -38,7 +38,7 @@ export default class RelationalClassSpecificationBuilder<T extends PlainObject> 
     property: SingularRelationalPropertiesIn<T>,
     relatedClass: ClassReference<TT>,
     foreignKeyProperty: PotentialIdentifierTypesIn<T>
-  ): RelationalClassSpecificationBuilder<T> {
+  ): ClassSpecificationBuilder<T> {
     if (
       this.specification.relationalProperties.find(
         x => x.name === property
@@ -59,7 +59,7 @@ export default class RelationalClassSpecificationBuilder<T extends PlainObject> 
     property: CollectionRelationalPropertiesIn<T>,
     relatedClass: ClassReference<TT>,
     foreignKeyProperty: PotentialIdentifierTypesIn<TT>
-  ): RelationalClassSpecificationBuilder<T> {
+  ): ClassSpecificationBuilder<T> {
     if (
       this.specification.relationalProperties.find(
         x => x.name === property

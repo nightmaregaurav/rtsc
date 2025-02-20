@@ -1,87 +1,90 @@
-import {EntityIdentifierType} from "./BaseTypes";
+import {EntityIdentifierType, RelationalClassesIn, RelationalPropertiesIn} from "./BaseTypes";
 import ClassSpecification from "./ClassSpecification";
 import {ClassReference, PlainObject} from "@nightmaregaurav/ts-utility-types";
 import ClassSpecificationRegistry from "./ClassSpecificationRegistry";
 import DataDriver from "./DataDriver";
-import RelationalQuery from "./RelationalQuery";
+import Queryable from "./Queryable";
 
-export default class RelationalRepository<T extends PlainObject> {
+export default class Repository<T extends PlainObject> {
   private readonly classSpecification: ClassSpecification<T>;
 
   constructor(_class: ClassReference<T>) {
     this.classSpecification = ClassSpecificationRegistry.getSpecificationFor(_class);
   }
 
+  public async createOrUpdate(instance: T): Promise<EntityIdentifierType> {
+    const tableName = this.classSpecification.table;
+    const tableIndex = await DataDriver.getTableIndex(tableName);
+    const identifierProperty = this.classSpecification.identifier;
+    const identifierValue = instance[identifierProperty] as EntityIdentifierType;
+    if (tableIndex.includes(identifierValue)) {
+      await this.update(instance);
+      return identifierValue;
+    }
+    return this.create(instance);
+  }
+  
   public async create(instance: T): Promise<EntityIdentifierType> {
     const tableName = this.classSpecification.table;
     const identifierProperty = this.classSpecification.identifier;
     const identifierValue = instance[identifierProperty] as EntityIdentifierType;
+    
+    await this.handleRelationalProperties(instance, identifierValue);
+
     const dataKey = DataDriver.getTableDataKey(tableName, identifierValue);
     const pureObject = this.getPureObject(instance);
-
     await DataDriver.addTableIndex(tableName, identifierValue);
     await DataDriver.instance.write(dataKey, pureObject);
-
-    for (const relationalProperty of this.classSpecification.relationalProperties) {
-      if (!relationalProperty.isList) {
-        const relatedClassSpecification = ClassSpecificationRegistry
-          .getSpecificationFor(relationalProperty.class);
-        const relatedTable = relatedClassSpecification.table;
-        const nameOnSourceTable = relationalProperty.name;
-        const idOnSource = instance[relationalProperty.idProperty] as EntityIdentifierType;
-        await DataDriver.addRelationIndex(
-          relatedTable,
-          tableName,
-          nameOnSourceTable,
-          idOnSource,
-          identifierValue
-        );
-        const relationalRepository = new RelationalRepository(relationalProperty.class);
-        const relatedObject = instance[relationalProperty.name];
-        await relationalRepository.createOrUpdate(
-      }
-    }
     return identifierValue;
   }
   
-  public getQueryable(): RelationalQuery<T, T> {
-    return new RelationalQuery<T, T>(this.classSpecification);
+  public getQueryable(): Queryable<T, T> {
+    return new Queryable<T, T>(this.classSpecification);
   }
 
   public async update(instance: T): Promise<void> {
     const tableName = this.classSpecification.table;
     const identifierProperty = this.classSpecification.identifier;
     const identifierValue = instance[identifierProperty] as EntityIdentifierType;
-    const dataKey = DataDriver.getTableDataKey(
-      tableName,
-      identifierValue,
-    );
+    
+    await this.handleRelationalProperties(instance, identifierValue);
+
+    const dataKey = DataDriver.getTableDataKey(tableName, identifierValue,);
     const pureObject = this.getPureObject(instance);
     await DataDriver.instance.write(dataKey, pureObject);
   }
 
-  public async delete(identifier: EntityIdentifierType): Promise<void> {
+  public async delete(instance: T): Promise<void> {
     const tableName = this.classSpecification.table;
-    const dataKey = DataDriver.getTableDataKey(
-      tableName,
-      identifier,
-    );
-    const dataToBeDeleted = await DataDriver.instance.read<T>(dataKey);
+    const identifierProperty = this.classSpecification.identifier;
+    const identifierValue = instance[identifierProperty] as EntityIdentifierType;
+    const dataKey = DataDriver.getTableDataKey(tableName, identifierValue);
+    
+    await DataDriver.removeTableIndex(tableName, identifierValue);
     await DataDriver.instance.remove(dataKey);
-    await DataDriver.removeTableIndex(tableName, identifier);
+
     for (const relationalProperty of this.classSpecification.relationalProperties) {
+      const relatedClassSpecification = ClassSpecificationRegistry
+        .getSpecificationFor(relationalProperty.class);
+      const relatedTable = relatedClassSpecification.table;
+      const relatedPropertyIdName = relationalProperty.idProperty;
       if (!relationalProperty.isList) {
-        const relatedClassSpecification = ClassSpecificationRegistry
-          .getSpecificationFor(relationalProperty.class);
-        const nonFkTableName = relatedClassSpecification.table;
-        const fk = dataToBeDeleted[relationalProperty.idProperty] as EntityIdentifierType;
-        await DataDriver.removeRelationIndex(nonFkTableName, tableName, fk, identifier);
+        const identifierOfRelatedTable = instance[relationalProperty.idProperty] as EntityIdentifierType;
+        await DataDriver.removeRelationIndex(
+          relatedTable,
+          tableName,
+          relatedPropertyIdName,
+          identifierOfRelatedTable,
+          identifierValue
+        );
       }
       else {
-        const relatedClassSpecification = ClassSpecificationRegistry
-          .getSpecificationFor(relationalProperty.class);
-        const fkTableName = relatedClassSpecification.table;
-        await DataDriver.removeRelationIndexRecord(tableName, fkTableName, identifier);
+        await DataDriver.removeRelationIndexRecord(
+          tableName,
+          relatedTable,
+          relationalProperty.idProperty,
+          identifierValue
+        );
       }
     }
   }
@@ -96,5 +99,47 @@ export default class RelationalRepository<T extends PlainObject> {
       obj[column] = instance[column];
     }
     return obj;
+  }
+  
+  private async handleRelationalProperties(instance: T, identifier: EntityIdentifierType): Promise<void> {
+    for (const relationalProperty of this.classSpecification.relationalProperties) {
+      if (!relationalProperty.isList) {
+        const relatedClassSpecification = ClassSpecificationRegistry
+          .getSpecificationFor(relationalProperty.class);
+        const nameOnSourceTable = relationalProperty.name;
+        const relatedObject = instance[nameOnSourceTable];
+        let idOnSource = instance[relationalProperty.idProperty] as EntityIdentifierType;
+        if (relatedObject) {
+          if (!idOnSource) {
+            idOnSource = relatedObject[relatedClassSpecification.identifier];
+            Object.assign(instance, {[relationalProperty.idProperty]: idOnSource});
+          }
+          const relationalRepository = new Repository(relationalProperty.class);
+          await relationalRepository.createOrUpdate(relatedObject);
+        }
+        
+        const relatedTable = relatedClassSpecification.table;
+        const relatedIdNameOnSource = relationalProperty.idProperty;
+        await DataDriver.addRelationIndex(
+          relatedTable,
+          this.classSpecification.table,
+          relatedIdNameOnSource,
+          idOnSource,
+          identifier
+        );
+      } else {
+        const relatedObjects = instance[relationalProperty.name] as RelationalClassesIn<T>[];
+        if (!relatedObjects || relatedObjects.length === 0) {
+          continue;
+        }
+        const relationalRepository = new Repository(relationalProperty.class);
+        for (const relatedObject of relatedObjects) {
+          const idOfSource = instance[this.classSpecification.identifier] as EntityIdentifierType;
+          const sourceIdPropNameOnRelatedObject = relationalProperty.idProperty;
+          relatedObject[sourceIdPropNameOnRelatedObject] = idOfSource;
+          await relationalRepository.createOrUpdate(relatedObject);
+        }
+      }
+    }
   }
 }

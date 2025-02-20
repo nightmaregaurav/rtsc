@@ -15,122 +15,137 @@ export default class DataDriver {
     DataDriver._instance = driver;
   }
   
-  private static getTableIndexKey(tableName: string): string {
-    return `::${tableName}::index`;
+  private static getTableIndexKey(table: string): string {
+    return ':' +
+      ':index-of:' +
+      `:${table}-identifiers:` +
+    ':';
   }
   
-  private static getFkIndexKey(
-    nonFkTableName: string,
-    fkTableName: string,
-    fk: EntityIdentifierType
+  private static getRelationIndexKey(
+    destinationTable: string,
+    sourceTable: string,
+    destinationIdPropertyNameOnSourceTable: string,
+    destinationIdOnSourceTable: EntityIdentifierType
   ): string {
-    return `::${fkTableName}::of::${nonFkTableName}::fk::${fk}::index`;
+    return ':' +
+      ':index-of:' +
+      `:${sourceTable}-identifiers:` +
+      ':which-has-one:' +
+      `:${destinationTable}:` +
+      ':as:' +
+      `:${destinationIdPropertyNameOnSourceTable}:` +
+      ':with-identifier:' +
+      `:${destinationIdOnSourceTable}:` +
+    ':';
   }
   
-  static async getIndex(
-    tableName: string
-  ): Promise<EntityIdentifierType[]> {
-    const index = await DataDriver
-      .instance
-      .read<EntityIdentifierType[]>(
-        DataDriver.getTableIndexKey(tableName)
-      );
+  static async getTableIndex(table: string): Promise<EntityIdentifierType[]> {
+    const tableIndexKey = DataDriver.getTableIndexKey(table);
+    const index = await DataDriver.instance.read<EntityIdentifierType[]>(tableIndexKey);
     return index || [];
   }
   
-  static async getFkIndex(
-    nonFkTableName: string,
-    fkTableName: string,
-    fk: EntityIdentifierType
+  static async getRelationIndex(
+    destinationTable: string,
+    sourceTable: string,
+    destinationIdPropertyNameOnSourceTable: string,
+    destinationIdOnSourceTable: EntityIdentifierType,
   ): Promise<EntityIdentifierType[]> {
-    return await DataDriver
-      .instance
-      .read<EntityIdentifierType[]>(
-        DataDriver.getFkIndexKey(nonFkTableName, fkTableName, fk)
-      );
+    const relationIndexKey = DataDriver.getRelationIndexKey(
+      destinationTable,
+      sourceTable,
+      destinationIdPropertyNameOnSourceTable,
+      destinationIdOnSourceTable
+    );
+    return await DataDriver.instance.read<EntityIdentifierType[]>(relationIndexKey);
   }
   
-  static async addIndex(tableName: string, index: EntityIdentifierType): Promise<void> {
-    const existingIndex = await DataDriver.getIndex(tableName);
-    if (!existingIndex) {
-      await DataDriver.instance.write(DataDriver.getTableIndexKey(tableName), [index]);
+  static async addTableIndex(table: string, identifier: EntityIdentifierType): Promise<void> {
+    const tableIndexKey = DataDriver.getTableIndexKey(table);
+    const tableIndex = await DataDriver.instance.read<EntityIdentifierType[]>(tableIndexKey);
+    if (!tableIndex) {
+      await DataDriver.instance.write(tableIndexKey, [identifier]);
       return;
     }
-    if (existingIndex.includes(index)) {
-      throw new Error(`Index constraint violation: ${index} already exists in ${tableName}`);
+    if (tableIndex.includes(identifier)) {
+      throw new Error(`Index constraint violation: ${identifier} already exists in ${table}`);
     }
-    existingIndex.push(index);
-    await DataDriver.instance.write(DataDriver.getTableIndexKey(tableName), existingIndex);
+    tableIndex.push(identifier);
+    await DataDriver.instance.write(tableIndexKey, tableIndex);
   }
   
-  static async addFkIndex(
-    nonFkTableName: string,
-    fkTableName: string,
-    fk: EntityIdentifierType,
-    index: EntityIdentifierType
+  static async addRelationIndex(
+    destinationTable: string,
+    sourceTable: string,
+    destinationIdPropertyNameOnSourceTable: string,
+    destinationIdOnSourceTable: EntityIdentifierType,
+    identifier: EntityIdentifierType
   ): Promise<void> {
-    const existingIndex = await DataDriver.getFkIndex(
-      nonFkTableName,
-      fkTableName,
-      fk
+    const relationIndexKey = DataDriver.getRelationIndexKey(
+      destinationTable,
+      sourceTable,
+      destinationIdPropertyNameOnSourceTable,
+      destinationIdOnSourceTable
     );
-    if(!existingIndex) {
-      await DataDriver.instance.write(
-        DataDriver.getFkIndexKey(nonFkTableName, fkTableName, fk),
-        [index]
-      );
+    const relationIndex = await DataDriver.instance.read<EntityIdentifierType[]>(
+      relationIndexKey
+    );
+    if (!relationIndex) {
+      await DataDriver.instance.write(relationIndexKey, [identifier]);
       return;
     }
-    if (existingIndex.includes(index)) {
-      throw new Error(
-        `Index constraint violation: ${index} already exists in ${nonFkTableName} for fk ${fk}`
-      );
-    }
-    existingIndex.push(index);
-    await DataDriver.instance.write(
-      DataDriver.getFkIndexKey(nonFkTableName, fkTableName, fk),
-      existingIndex
-    );
-  }
-  
-  static async removeIndex(tableName: string, index: EntityIdentifierType): Promise<void> {
-    const existingIndex = await DataDriver.getIndex(tableName);
-    if (!existingIndex.includes(index)) {
+    if (relationIndex.includes(identifier)) {
       return;
     }
-    const newIndexes = existingIndex.filter(x => x !== index);
-    await DataDriver.instance.write(DataDriver.getTableIndexKey(tableName), newIndexes);
+    relationIndex.push(identifier);
+    await DataDriver.instance.write(relationIndexKey, relationIndex);
   }
   
-  static async removeFkIndex(
-    nonFkTableName: string,
-    fkTableName: string,
-    fk: EntityIdentifierType,
-    index: EntityIdentifierType
+  static async removeTableIndex(table: string, identifier: EntityIdentifierType): Promise<void> {
+    const tableIndexKey = DataDriver.getTableIndexKey(table);
+    const tableIndex = await DataDriver.instance.read<EntityIdentifierType[]>(tableIndexKey);
+    if (!tableIndex) {
+      return;
+    }
+    const newIndex = tableIndex.filter(x => x !== identifier);
+    await DataDriver.instance.write(tableIndexKey, newIndex);
+  }
+  
+  static async removeRelationIndex(
+    destinationTable: string,
+    sourceTable: string,
+    destinationIdPropertyNameOnSourceTable: string,
+    destinationIdOnSourceTable: EntityIdentifierType,
+    identifier: EntityIdentifierType
   ): Promise<void> {
-    const existingIndex = await DataDriver.getFkIndex(
-      nonFkTableName,
-      fkTableName,
-      fk
+    const relationIndexKey = DataDriver.getRelationIndexKey(
+      destinationTable,
+      sourceTable,
+      destinationIdPropertyNameOnSourceTable,
+      destinationIdOnSourceTable
     );
-    if (!existingIndex || !existingIndex.includes(index)) {
+    const relationIndex = await DataDriver.instance.read<EntityIdentifierType[]>(relationIndexKey);
+    if (!relationIndex) {
       return;
     }
-    const newIndexes = existingIndex.filter(x => x !== index);
-    await DataDriver.instance.write(
-      DataDriver.getFkIndexKey(nonFkTableName, fkTableName, fk),
-      newIndexes
-    );
+    const newRelationIndex = relationIndex.filter(x => x !== identifier);
+    await DataDriver.instance.write(relationIndexKey, newRelationIndex);
   }
-  
-  static async removeFkIndexRecord(
-    nonFkTableName: string,
-    fkTableName: string,
-    fk: EntityIdentifierType
+
+  static async removeRelationIndexRecord(
+    destinationTable: string,
+    sourceTable: string,
+    destinationIdPropertyNameOnSourceTable: string,
+    destinationIdOnSourceTable: EntityIdentifierType
   ): Promise<void> {
-    await DataDriver.instance.remove(
-      DataDriver.getFkIndexKey(nonFkTableName, fkTableName, fk)
+    const relationIndexKey = DataDriver.getRelationIndexKey(
+      destinationTable,
+      sourceTable,
+      destinationIdPropertyNameOnSourceTable,
+      destinationIdOnSourceTable
     );
+    await DataDriver.instance.remove(relationIndexKey);
   }
   
   static getTableDataKey(tableName: string, index: EntityIdentifierType): string {
